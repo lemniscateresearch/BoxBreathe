@@ -12,3 +12,9 @@
 
 # Local Android SDK configuration
 android/local.properties
+
+# Claude Code
+.claude/worktrees/
+
+# macOS
+.DS_Store
