@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../common/audio/session_audio.dart';
 import '../common/widgets/option_picker.dart';
 import '../common/widgets/page_frame.dart';
+import '../common/widgets/session_layout.dart';
+import '../common/widgets/setup_sheet.dart';
 import '../common/widgets/step_prompt.dart';
 import '../settings/settings_scope.dart';
 import 'breathing_method.dart';
@@ -48,6 +50,7 @@ class _BreathingScreenState extends State<BreathingScreen>
 
   @override
   Widget build(BuildContext context) => PageFrame(
+    scrollable: false,
     child: ListenableBuilder(
       listenable: _session,
       builder: (context, _) => _buildContent(context),
@@ -56,61 +59,69 @@ class _BreathingScreenState extends State<BreathingScreen>
 
   Widget _buildContent(BuildContext context) {
     final session = _session;
-    final canChangeSettings = session.canChangeSettings;
 
-    return Column(
+    return SessionLayout(
+      visual: BreathingPacer(
+        animation: session.phaseProgress,
+        method: session.method,
+        phaseIndex: session.phaseIndex,
+        isFinished: session.isFinished,
+      ),
+      prompt: StepPrompt(
+        switchKey: session.isFinished ? 'finished' : session.phase,
+        title: session.isFinished ? 'Session complete' : session.phase.title,
+        message: session.isFinished
+            ? 'Well done. Take a moment before you continue.'
+            : session.phase.cue,
+      ),
+      details: SessionClock(secondsRemaining: session.secondsRemaining),
+      showSetup: session.canChangeSettings,
+      setup: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            session.isFinished
+                ? 'A quiet moment, just for you.'
+                : session.method.description,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              fontSize: 16,
+            ),
+          ),
+          const SizedBox(height: 12),
+          SetupSummaryButton(
+            label: '${session.method.label} · ${session.minutes} min',
+            onPressed: () => _openSetup(context),
+          ),
+        ],
+      ),
+      controls: SessionControls(session: session),
+    );
+  }
+
+  void _openSetup(BuildContext context) => showSetupSheet(
+    context,
+    listenable: _session,
+    builder: (context) => Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
-          session.isFinished
-              ? 'A quiet moment, just for you.'
-              : session.method.description,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-            fontSize: 16,
-          ),
-        ),
-        const SizedBox(height: 36),
-        // Center converts the column's tight stretch constraint into a
-        // loose one so the pacer keeps its square size.
-        Center(
-          child: BreathingPacer(
-            animation: session.phaseProgress,
-            method: session.method,
-            phaseIndex: session.phaseIndex,
-            isFinished: session.isFinished,
-          ),
-        ),
-        const SizedBox(height: 28),
-        StepPrompt(
-          switchKey: session.isFinished ? 'finished' : session.phase,
-          title: session.isFinished ? 'Session complete' : session.phase.title,
-          message: session.isFinished
-              ? 'Well done. Take a moment before you continue.'
-              : session.phase.cue,
-        ),
-        const SizedBox(height: 22),
-        SessionClock(secondsRemaining: session.secondsRemaining),
-        const SizedBox(height: 34),
         OptionPicker<BreathingMethod>(
           title: 'Choose a breathing shape',
           options: BreathingMethod.values,
-          selected: session.method,
+          selected: _session.method,
           labelOf: (method) => method.label,
-          onSelected: canChangeSettings ? session.selectMethod : null,
+          onSelected: _session.selectMethod,
         ),
         const SizedBox(height: 26),
         OptionPicker<int>(
           title: 'Choose a session length',
           options: BreathingSession.lengthOptions,
-          selected: session.minutes,
+          selected: _session.minutes,
           labelOf: (minutes) => '$minutes min',
-          onSelected: canChangeSettings ? session.selectLength : null,
+          onSelected: _session.selectLength,
         ),
-        const SizedBox(height: 28),
-        SessionControls(session: session),
       ],
-    );
-  }
+    ),
+  );
 }
