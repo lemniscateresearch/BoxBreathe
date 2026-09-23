@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:box_breathe/main.dart';
+import 'package:box_breathe/app/app.dart';
 
 /// Verifies the pacer renders in a square box: the painter's canvas must be
 /// as tall as it is wide, whatever the surrounding layout constraints are.

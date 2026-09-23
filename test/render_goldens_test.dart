@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:box_breathe/main.dart';
+import 'package:box_breathe/app/app.dart';
 
 /// Renders the breathing pacer for every method to PNG files under
 /// test/goldens/. Run with:
