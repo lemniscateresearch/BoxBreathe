@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../common/widgets/option_picker.dart';
+import '../common/widgets/step_prompt.dart';
 import 'breathing_method.dart';
+import 'breathing_phase.dart';
 import 'breathing_session.dart';
 import 'widgets/breathing_pacer.dart';
-import 'widgets/phase_prompt.dart';
 import 'widgets/session_clock.dart';
 import 'widgets/session_controls.dart';
 
@@ -87,7 +88,13 @@ class _BreathingScreenState extends State<BreathingScreen>
           ),
         ),
         const SizedBox(height: 28),
-        PhasePrompt(phase: session.phase, isFinished: session.isFinished),
+        StepPrompt(
+          switchKey: session.isFinished ? 'finished' : session.phase,
+          title: session.isFinished ? 'Session complete' : session.phase.title,
+          message: session.isFinished
+              ? 'Well done. Take a moment before you continue.'
+              : session.phase.cue,
+        ),
         const SizedBox(height: 22),
         SessionClock(secondsRemaining: session.secondsRemaining),
         const SizedBox(height: 34),

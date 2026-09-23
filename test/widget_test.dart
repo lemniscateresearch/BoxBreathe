@@ -75,4 +75,29 @@ void main() {
     expect(find.text('BoxBreathe'), findsOneWidget);
     expect(find.text('Breathing'), findsOneWidget);
   });
+
+  testWidgets('opens the airway clearance page and starts ACBT', (
+    tester,
+  ) async {
+    await tester.pumpWidget(const BoxBreatheApp());
+
+    await tester.tap(find.byTooltip('Open navigation'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Airway clearance'));
+    await tester.pumpAndSettle();
+
+    // ACBT is the default routine.
+    expect(find.text('Full cycle (ACBT)'), findsOneWidget);
+    expect(find.text('Huffs with rests'), findsOneWidget);
+
+    final startButton = find.text('Start session');
+    await tester.ensureVisible(startButton);
+    await tester.tap(startButton);
+    await tester.pump();
+
+    // The session starts with relaxed breathing in the first cycle.
+    expect(find.text('Relaxed breathing'), findsOneWidget);
+    expect(find.text('Cycle 1 of 3'), findsOneWidget);
+    expect(find.text('Pause session'), findsOneWidget);
+  });
 }

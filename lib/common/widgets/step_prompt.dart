@@ -1,31 +1,33 @@
 import 'package:flutter/material.dart';
 
-import '../breathing_phase.dart';
+/// Tells the user what to do now: a large title with a short message
+/// below it. The text cross-fades when [switchKey] changes.
+class StepPrompt extends StatelessWidget {
+  const StepPrompt({
+    super.key,
+    required this.switchKey,
+    required this.title,
+    required this.message,
+  });
 
-/// Tells the user what to do in the current phase, or that the session
-/// is complete. The text cross-fades when the phase changes.
-class PhasePrompt extends StatelessWidget {
-  const PhasePrompt({super.key, required this.phase, required this.isFinished});
-
-  final BreathingPhase phase;
-  final bool isFinished;
+  final Object switchKey;
+  final String title;
+  final String message;
 
   @override
   Widget build(BuildContext context) => AnimatedSwitcher(
     duration: const Duration(milliseconds: 250),
     child: Column(
-      key: ValueKey(isFinished ? 'finished' : phase),
+      key: ValueKey(switchKey),
       children: [
         Text(
-          isFinished ? 'Session complete' : phase.title,
+          title,
           textAlign: TextAlign.center,
           style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w700),
         ),
         const SizedBox(height: 6),
         Text(
-          isFinished
-              ? 'Well done. Take a moment before you continue.'
-              : phase.cue,
+          message,
           textAlign: TextAlign.center,
           style: TextStyle(
             color: Theme.of(context).colorScheme.onSurfaceVariant,
