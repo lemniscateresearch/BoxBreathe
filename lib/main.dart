@@ -1,122 +1,369 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
-void main() {
-  runApp(const MyApp());
-}
+void main() => runApp(const BoxBreatheApp());
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class BoxBreatheApp extends StatelessWidget {
+  const BoxBreatheApp({super.key});
 
-  // This widget is the root of your application.
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
+  Widget build(BuildContext context) => MaterialApp(
+    title: 'BoxBreathe',
+    debugShowCheckedModeBanner: false,
+    theme: ThemeData(
+      useMaterial3: true,
+      scaffoldBackgroundColor: const Color(0xFFF6F8F6),
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: const Color(0xFF163C34),
+        surface: const Color(0xFFF6F8F6),
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
-    );
-  }
+      textTheme: ThemeData.light().textTheme.apply(
+        bodyColor: const Color(0xFF163C34),
+        displayColor: const Color(0xFF163C34),
+      ),
+    ),
+    home: const BreathingSessionScreen(),
+  );
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
+enum BreathingPhase { inhale, holdAfterInhale, exhale, holdAfterExhale }
 
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
+extension BreathingPhaseDetails on BreathingPhase {
+  String get title => switch (this) {
+    BreathingPhase.inhale => 'Breathe in',
+    BreathingPhase.holdAfterInhale || BreathingPhase.holdAfterExhale => 'Hold',
+    BreathingPhase.exhale => 'Breathe out',
+  };
 
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
+  String get cue => switch (this) {
+    BreathingPhase.inhale => 'Let the square grow with your breath.',
+    BreathingPhase.holdAfterInhale => 'Keep a gentle, comfortable hold.',
+    BreathingPhase.exhale => 'Let the square soften as you breathe out.',
+    BreathingPhase.holdAfterExhale => 'Rest here before the next breath.',
+  };
 
-  final String title;
+  Color get color => switch (this) {
+    BreathingPhase.inhale => const Color(0xFF398F7B),
+    BreathingPhase.holdAfterInhale => const Color(0xFF246457),
+    BreathingPhase.exhale => const Color(0xFF6B8DC4),
+    BreathingPhase.holdAfterExhale => const Color(0xFF5974A4),
+  };
+}
+
+class BreathingSessionScreen extends StatefulWidget {
+  const BreathingSessionScreen({super.key});
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<BreathingSessionScreen> createState() => _BreathingSessionScreenState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _BreathingSessionScreenState extends State<BreathingSessionScreen>
+    with SingleTickerProviderStateMixin {
+  static const _phaseLength = Duration(seconds: 4);
+  static const _sessionOptions = [1, 3, 5, 10];
 
-  void _incrementCounter() {
+  late final AnimationController _phaseController;
+  Timer? _sessionTimer;
+  int _selectedMinutes = 3;
+  int _secondsRemaining = 3 * 60;
+  int _phaseIndex = 0;
+  bool _isRunning = false;
+  bool _isPaused = false;
+
+  BreathingPhase get _phase => BreathingPhase.values[_phaseIndex];
+
+  @override
+  void initState() {
+    super.initState();
+    _phaseController = AnimationController(vsync: this, duration: _phaseLength)
+      ..addStatusListener((status) {
+        if (status == AnimationStatus.completed && _isRunning) _advancePhase();
+      });
+  }
+
+  @override
+  void dispose() {
+    _sessionTimer?.cancel();
+    _phaseController.dispose();
+    super.dispose();
+  }
+
+  void _startOrResume() {
+    if (_secondsRemaining == 0) {
+      _secondsRemaining = _selectedMinutes * 60;
+      _phaseIndex = 0;
+      _phaseController.reset();
+    }
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+      _isRunning = true;
+      _isPaused = false;
+    });
+    _phaseController.forward();
+    _sessionTimer ??= Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!_isRunning) return;
+      if (_secondsRemaining <= 1) {
+        _completeSession();
+      } else {
+        setState(() => _secondsRemaining--);
+      }
     });
   }
 
+  void _pause() {
+    setState(() {
+      _isRunning = false;
+      _isPaused = true;
+    });
+    _phaseController.stop();
+  }
+
+  void _reset() {
+    _sessionTimer?.cancel();
+    _sessionTimer = null;
+    _phaseController.reset();
+    setState(() {
+      _isRunning = false;
+      _isPaused = false;
+      _phaseIndex = 0;
+      _secondsRemaining = _selectedMinutes * 60;
+    });
+  }
+
+  void _completeSession() {
+    _sessionTimer?.cancel();
+    _sessionTimer = null;
+    _phaseController.stop();
+    setState(() {
+      _secondsRemaining = 0;
+      _isRunning = false;
+      _isPaused = false;
+    });
+  }
+
+  void _advancePhase() {
+    setState(
+      () => _phaseIndex = (_phaseIndex + 1) % BreathingPhase.values.length,
+    );
+    _phaseController
+      ..reset()
+      ..forward();
+  }
+
+  void _selectDuration(int minutes) {
+    if (_isRunning || _isPaused) return;
+    setState(() {
+      _selectedMinutes = minutes;
+      _secondsRemaining = minutes * 60;
+    });
+  }
+
+  String get _formattedTime {
+    final minutes = _secondsRemaining ~/ 60;
+    final seconds = _secondsRemaining % 60;
+    return '$minutes:${seconds.toString().padLeft(2, '0')}';
+  }
+
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
+    final isFinished = _secondsRemaining == 0;
+    final canChooseDuration = !_isRunning && !_isPaused;
+
     return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: .center,
-          children: [
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 560),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(24, 32, 24, 28),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Text(
+                    'BoxBreathe',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    isFinished
+                        ? 'A quiet moment, just for you.'
+                        : 'Four steady counts. One calmer breath at a time.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      fontSize: 16,
+                    ),
+                  ),
+                  const SizedBox(height: 36),
+                  _BreathingSquare(
+                    animation: _phaseController,
+                    phase: _phase,
+                    isFinished: isFinished,
+                  ),
+                  const SizedBox(height: 28),
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 250),
+                    child: Column(
+                      key: ValueKey(isFinished ? 'finished' : _phase),
+                      children: [
+                        Text(
+                          isFinished ? 'Session complete' : _phase.title,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 30,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          isFinished
+                              ? 'Well done. Take a moment before you continue.'
+                              : _phase.cue,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurfaceVariant,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 22),
+                  Semantics(
+                    liveRegion: true,
+                    label: 'Session time remaining: $_formattedTime',
+                    child: Text(
+                      _formattedTime,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 44,
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: 2,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 34),
+                  const Text(
+                    'Choose a session length',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                  ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: _sessionOptions
+                        .map(
+                          (minutes) => ChoiceChip(
+                            label: Text('$minutes min'),
+                            selected: _selectedMinutes == minutes,
+                            onSelected: canChooseDuration
+                                ? (_) => _selectDuration(minutes)
+                                : null,
+                          ),
+                        )
+                        .toList(),
+                  ),
+                  const SizedBox(height: 28),
+                  FilledButton.icon(
+                    onPressed: isFinished || !_isRunning
+                        ? _startOrResume
+                        : _pause,
+                    icon: Icon(
+                      _isRunning
+                          ? Icons.pause_rounded
+                          : Icons.play_arrow_rounded,
+                    ),
+                    label: Text(
+                      _isRunning
+                          ? 'Pause session'
+                          : _isPaused
+                          ? 'Resume session'
+                          : isFinished
+                          ? 'Start again'
+                          : 'Start session',
+                    ),
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size.fromHeight(56),
+                      textStyle: const TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  TextButton.icon(
+                    onPressed: (_isRunning || _isPaused || isFinished)
+                        ? _reset
+                        : null,
+                    icon: const Icon(Icons.restart_alt_rounded),
+                    label: const Text('Reset'),
+                  ),
+                ],
+              ),
             ),
-          ],
+          ),
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
       ),
     );
   }
+}
+
+class _BreathingSquare extends StatelessWidget {
+  const _BreathingSquare({
+    required this.animation,
+    required this.phase,
+    required this.isFinished,
+  });
+
+  final Animation<double> animation;
+  final BreathingPhase phase;
+  final bool isFinished;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    label: isFinished
+        ? 'Breathing session complete'
+        : '${phase.title}. Follow the moving square.',
+    child: AnimatedBuilder(
+      animation: animation,
+      builder: (context, child) {
+        final progress = animation.value;
+        final scale = switch (phase) {
+          BreathingPhase.inhale => 0.62 + (0.38 * progress),
+          BreathingPhase.holdAfterInhale => 1.0,
+          BreathingPhase.exhale => 1.0 - (0.38 * progress),
+          BreathingPhase.holdAfterExhale => 0.62,
+        };
+        return SizedBox.square(
+          dimension: 230,
+          child: Center(
+            child: Transform.scale(
+              scale: isFinished ? 0.62 : scale,
+              child: Container(
+                width: 190,
+                height: 190,
+                decoration: BoxDecoration(
+                  color: phase.color.withValues(alpha: 0.14),
+                  border: Border.all(color: phase.color, width: 7),
+                  borderRadius: BorderRadius.circular(18),
+                  boxShadow: [
+                    BoxShadow(
+                      color: phase.color.withValues(alpha: 0.16),
+                      blurRadius: 28,
+                      spreadRadius: 4,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    ),
+  );
 }

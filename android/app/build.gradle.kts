@@ -7,8 +7,6 @@ plugins {
 android {
     namespace = "com.boxbreathe.box_breathe"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
-
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
