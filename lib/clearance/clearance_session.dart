@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:flutter/animation.dart';
 import 'package:flutter/foundation.dart';
 
-import '../common/cues/cue_speaker.dart';
+import '../common/audio/cue_player.dart';
+import '../common/audio/session_cue.dart';
+import '../common/guided_session.dart';
 import '../common/session_status.dart';
 import 'clearance_routine.dart';
 import 'clearance_step.dart';
@@ -14,7 +16,7 @@ import 'clearance_step.dart';
 /// Timed steps advance on their own. A huff step waits until the user
 /// calls [completeHuff], because a huff and a cough take a different
 /// length of time for each person.
-class ClearanceSession extends ChangeNotifier {
+class ClearanceSession extends ChangeNotifier implements GuidedSession {
   ClearanceSession({
     required TickerProvider vsync,
     required this._cues,
@@ -30,7 +32,7 @@ class ClearanceSession extends ChangeNotifier {
   static const _finishedCue = 'Session complete. Well done.';
 
   final ClearanceSettings settings;
-  final CueSpeaker _cues;
+  final CuePlayer _cues;
   late final AnimationController _stepAnimation;
 
   ClearanceRoutine _routine = ClearanceRoutine.acbt;
@@ -42,6 +44,7 @@ class ClearanceSession extends ChangeNotifier {
   List<ClearanceStep> get steps => _steps;
   int get stepIndex => _stepIndex;
   ClearanceStep get step => _steps[_stepIndex];
+  @override
   SessionStatus get status => _status;
 
   /// Goes from 0 to 1 during each timed step. It stays at 0 during a huff.
@@ -62,7 +65,7 @@ class ClearanceSession extends ChangeNotifier {
 
     if (isResuming) {
       if (!step.waitsForUser) _stepAnimation.forward();
-      _say(step.kind.spokenCue);
+      _playStepCue();
       notifyListeners();
     } else {
       _beginStep();
@@ -105,7 +108,7 @@ class ClearanceSession extends ChangeNotifier {
         ..duration = duration
         ..forward();
     }
-    _say(step.kind.spokenCue);
+    _playStepCue();
     notifyListeners();
   }
 
@@ -121,11 +124,12 @@ class ClearanceSession extends ChangeNotifier {
   void _finish() {
     _stepAnimation.stop();
     _status = SessionStatus.finished;
-    _say(_finishedCue);
+    unawaited(_cues.play(SessionCue.finished, _finishedCue));
     notifyListeners();
   }
 
-  void _say(String text) => unawaited(_cues.speak(text));
+  void _playStepCue() =>
+      unawaited(_cues.play(step.kind.sessionCue, step.kind.spokenCue));
 
   @override
   void dispose() {

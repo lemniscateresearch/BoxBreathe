@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../common/audio/session_audio.dart';
 import '../common/widgets/option_picker.dart';
+import '../common/widgets/page_frame.dart';
 import '../common/widgets/step_prompt.dart';
+import '../settings/settings_scope.dart';
 import 'breathing_method.dart';
 import 'breathing_phase.dart';
 import 'breathing_session.dart';
@@ -20,42 +23,34 @@ class BreathingScreen extends StatefulWidget {
 
 class _BreathingScreenState extends State<BreathingScreen>
     with SingleTickerProviderStateMixin {
-  late final _session = BreathingSession(vsync: this);
+  late final SessionAudio _audio;
+  late final BreathingSession _session;
+
+  @override
+  void initState() {
+    super.initState();
+    final settings = SettingsScope.read(context).settings;
+    _audio = SessionAudio.of(context);
+    _session = BreathingSession(
+      vsync: this,
+      cues: _audio.cues,
+      phaseLength: Duration(seconds: settings.breathingPhaseSeconds),
+    );
+    _audio.playMusicDuring(_session);
+  }
 
   @override
   void dispose() {
     _session.dispose();
+    _audio.dispose();
     super.dispose();
   }
 
   @override
-  Widget build(BuildContext context) => SafeArea(
-    child: Stack(
-      children: [
-        Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 560),
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(24, 56, 24, 28),
-              child: ListenableBuilder(
-                listenable: _session,
-                builder: (context, _) => _buildContent(context),
-              ),
-            ),
-          ),
-        ),
-        // Menu button that opens the sidebar. It sits above the content
-        // in the top-left corner and stays clear of the centered column.
-        Positioned(
-          top: 8,
-          left: 8,
-          child: IconButton(
-            icon: const Icon(Icons.menu_rounded),
-            tooltip: 'Open navigation',
-            onPressed: () => Scaffold.of(context).openDrawer(),
-          ),
-        ),
-      ],
+  Widget build(BuildContext context) => PageFrame(
+    child: ListenableBuilder(
+      listenable: _session,
+      builder: (context, _) => _buildContent(context),
     ),
   );
 

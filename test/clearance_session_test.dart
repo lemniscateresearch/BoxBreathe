@@ -3,19 +3,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:box_breathe/clearance/clearance_routine.dart';
 import 'package:box_breathe/clearance/clearance_session.dart';
 import 'package:box_breathe/clearance/clearance_step.dart';
-import 'package:box_breathe/common/cues/cue_speaker.dart';
+import 'package:box_breathe/common/audio/session_cue.dart';
 import 'package:box_breathe/common/session_status.dart';
 
-class FakeCueSpeaker implements CueSpeaker {
-  final spoken = <String>[];
-  var stops = 0;
-
-  @override
-  Future<void> speak(String text) async => spoken.add(text);
-
-  @override
-  Future<void> stop() async => stops++;
-}
+import 'fakes.dart';
 
 /// One cycle of one huff, with 1-second timed steps.
 const _shortSettings = ClearanceSettings(
@@ -29,11 +20,11 @@ const _shortSettings = ClearanceSettings(
 );
 
 void main() {
-  late FakeCueSpeaker cues;
+  late FakeCuePlayer cues;
   late ClearanceSession session;
 
   setUp(() {
-    cues = FakeCueSpeaker();
+    cues = FakeCuePlayer();
     session = ClearanceSession(
       vsync: const TestVSync(),
       cues: cues,
@@ -65,11 +56,17 @@ void main() {
     await tester.pump(const Duration(milliseconds: 1100));
     expect(session.status, SessionStatus.finished);
 
-    expect(cues.spoken, [
+    expect(cues.words, [
       'Relax, and breathe gently',
       'Huff',
       'Relax, and breathe gently',
       'Session complete. Well done.',
+    ]);
+    expect(cues.cues, [
+      SessionCue.rest,
+      SessionCue.huff,
+      SessionCue.rest,
+      SessionCue.finished,
     ]);
   });
 
@@ -80,7 +77,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 1100));
     }
 
-    expect(cues.spoken, [
+    expect(cues.words, [
       'Relax, and breathe gently',
       'Breathe in deeply',
       'Hold',
@@ -108,7 +105,7 @@ void main() {
 
     session.startOrResume();
     expect(session.status, SessionStatus.running);
-    expect(cues.spoken.last, 'Relax, and breathe gently');
+    expect(cues.words.last, 'Relax, and breathe gently');
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 600));
     expect(session.step.kind, ClearanceStepKind.deepBreathIn);

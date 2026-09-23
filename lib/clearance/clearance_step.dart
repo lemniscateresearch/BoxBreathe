@@ -1,5 +1,7 @@
 import 'package:flutter/painting.dart';
 
+import '../common/audio/session_cue.dart';
+
 enum ClearanceStepKind {
   breathingControl,
   deepBreathIn,
@@ -36,6 +38,14 @@ extension ClearanceStepKindDetails on ClearanceStepKind {
     ClearanceStepKind.deepBreathHold => 'Hold',
     ClearanceStepKind.deepBreathOut => 'Breathe out',
     ClearanceStepKind.huff => 'Huff',
+  };
+
+  SessionCue get sessionCue => switch (this) {
+    ClearanceStepKind.breathingControl => SessionCue.rest,
+    ClearanceStepKind.deepBreathIn => SessionCue.breatheIn,
+    ClearanceStepKind.deepBreathHold => SessionCue.hold,
+    ClearanceStepKind.deepBreathOut => SessionCue.breatheOut,
+    ClearanceStepKind.huff => SessionCue.huff,
   };
 
   Color get color => switch (this) {

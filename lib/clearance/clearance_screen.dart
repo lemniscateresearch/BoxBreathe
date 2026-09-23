@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../common/cues/tts_cue_speaker.dart';
+import '../common/audio/session_audio.dart';
 import '../common/widgets/option_picker.dart';
+import '../common/widgets/page_frame.dart';
 import '../common/widgets/step_prompt.dart';
+import '../settings/settings_scope.dart';
 import 'clearance_routine.dart';
 import 'clearance_session.dart';
 import 'clearance_step.dart';
@@ -20,42 +22,33 @@ class ClearanceScreen extends StatefulWidget {
 
 class _ClearanceScreenState extends State<ClearanceScreen>
     with SingleTickerProviderStateMixin {
-  late final _session = ClearanceSession(vsync: this, cues: TtsCueSpeaker());
+  late final SessionAudio _audio;
+  late final ClearanceSession _session;
+
+  @override
+  void initState() {
+    super.initState();
+    _audio = SessionAudio.of(context);
+    _session = ClearanceSession(
+      vsync: this,
+      cues: _audio.cues,
+      settings: SettingsScope.read(context).settings.clearance,
+    );
+    _audio.playMusicDuring(_session);
+  }
 
   @override
   void dispose() {
     _session.dispose();
+    _audio.dispose();
     super.dispose();
   }
 
   @override
-  Widget build(BuildContext context) => SafeArea(
-    child: Stack(
-      children: [
-        Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 560),
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(24, 56, 24, 28),
-              child: ListenableBuilder(
-                listenable: _session,
-                builder: (context, _) => _buildContent(context),
-              ),
-            ),
-          ),
-        ),
-        // Menu button that opens the sidebar. It sits above the content
-        // in the top-left corner and stays clear of the centered column.
-        Positioned(
-          top: 8,
-          left: 8,
-          child: IconButton(
-            icon: const Icon(Icons.menu_rounded),
-            tooltip: 'Open navigation',
-            onPressed: () => Scaffold.of(context).openDrawer(),
-          ),
-        ),
-      ],
+  Widget build(BuildContext context) => PageFrame(
+    child: ListenableBuilder(
+      listenable: _session,
+      builder: (context, _) => _buildContent(context),
     ),
   );
 
