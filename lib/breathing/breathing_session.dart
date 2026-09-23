@@ -3,10 +3,9 @@ import 'dart:async';
 import 'package:flutter/animation.dart';
 import 'package:flutter/foundation.dart';
 
+import '../common/session_status.dart';
 import 'breathing_method.dart';
 import 'breathing_phase.dart';
-
-enum SessionStatus { idle, running, paused, finished }
 
 /// Holds the state of one breathing session: the selected method and
 /// length, the countdown, and the progress through the current phase.

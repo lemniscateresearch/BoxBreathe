@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../common/session_status.dart';
 import '../breathing_session.dart';
 
 /// The primary start, pause, and resume button, with a reset button
