@@ -45,7 +45,10 @@ void main() {
       await tester.pump(const Duration(milliseconds: 1400));
 
       // Scroll back to the top so the whole pacer is inside the capture.
-      await tester.ensureVisible(find.text('BoxBreathe'));
+      final scrollable = tester.state<ScrollableState>(
+        find.byType(Scrollable).first,
+      );
+      scrollable.position.jumpTo(0);
       await tester.pumpAndSettle();
 
       await expectLater(

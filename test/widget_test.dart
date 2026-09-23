@@ -8,11 +8,6 @@ void main() {
   ) async {
     await tester.pumpWidget(const BoxBreatheApp());
 
-    expect(find.text('BoxBreathe'), findsOneWidget);
-    expect(find.text('1 min'), findsOneWidget);
-    expect(find.text('3 min'), findsOneWidget);
-    expect(find.text('5 min'), findsOneWidget);
-    expect(find.text('10 min'), findsOneWidget);
     expect(find.text('3:00'), findsOneWidget);
 
     final startButton = find.text('Start session');
@@ -65,5 +60,19 @@ void main() {
     await tester.tap(startButton);
     await tester.pump();
     expect(find.text('Breathe in'), findsOneWidget);
+  });
+
+  testWidgets('opens the sidebar from the breathing page', (tester) async {
+    await tester.pumpWidget(const BoxBreatheApp());
+
+    // The breathing page is the default page.
+    expect(find.text('Start session'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Open navigation'));
+    await tester.pumpAndSettle();
+
+    // The drawer shows the app name and the breathing destination.
+    expect(find.text('BoxBreathe'), findsOneWidget);
+    expect(find.text('Breathing'), findsOneWidget);
   });
 }

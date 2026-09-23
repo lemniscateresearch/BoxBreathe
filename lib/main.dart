@@ -31,7 +31,7 @@ class BoxBreatheApp extends StatelessWidget {
         theme: _themeFor(lightScheme),
         darkTheme: _themeFor(darkScheme),
         themeMode: ThemeMode.system,
-        home: const BreathingSessionScreen(),
+        home: const AppShell(),
       );
     },
   );
@@ -68,6 +68,18 @@ extension BreathingPhaseDetails on BreathingPhase {
     BreathingPhase.holdAfterInhale => const Color(0xFF246457),
     BreathingPhase.exhale => const Color(0xFF6B8DC4),
     BreathingPhase.holdAfterExhale => const Color(0xFF5974A4),
+  };
+}
+
+/// The pages that the sidebar offers. New modes (for example the
+/// forced-expiration technique) become a new page here.
+enum AppPage { breathing }
+
+extension AppPageDetails on AppPage {
+  String get label => switch (this) { AppPage.breathing => 'Breathing' };
+
+  IconData get icon => switch (this) {
+    AppPage.breathing => Icons.self_improvement_rounded,
   };
 }
 
@@ -165,6 +177,50 @@ Path _figureEightPath(Size size, double inset) {
     }
   }
   return path;
+}
+
+/// Hosts the pages that the sidebar offers, with the breathing screen
+/// as the default page. The drawer stays above the page body and keeps
+/// its state when the user switches pages.
+class AppShell extends StatefulWidget {
+  const AppShell({super.key});
+
+  @override
+  State<AppShell> createState() => _AppShellState();
+}
+
+class _AppShellState extends State<AppShell> {
+  AppPage _page = AppPage.breathing;
+
+  static const _pages = AppPage.values;
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    drawer: NavigationDrawer(
+      selectedIndex: _pages.indexOf(_page),
+      onDestinationSelected: (index) {
+        setState(() => _page = _pages[index]);
+        Navigator.of(context).pop();
+      },
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(28, 16, 28, 10),
+          child: Text(
+            'BoxBreathe',
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
+        ),
+        for (final page in _pages)
+          NavigationDrawerDestination(
+            icon: Icon(page.icon),
+            label: Text(page.label),
+          ),
+      ],
+    ),
+    body: switch (_page) {
+      AppPage.breathing => const BreathingSessionScreen(),
+    },
+  );
 }
 
 class BreathingSessionScreen extends StatefulWidget {
@@ -297,33 +353,28 @@ class _BreathingSessionScreenState extends State<BreathingSessionScreen>
     final isFinished = _secondsRemaining == 0;
     final canAdjustSettings = !_isRunning && !_isPaused;
 
-    return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 560),
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(24, 32, 24, 28),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const Text(
-                    'BoxBreathe',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.w700),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    isFinished
-                        ? 'A quiet moment, just for you.'
-                        : _selectedMethod.description,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      fontSize: 16,
+    return SafeArea(
+      child: Stack(
+        children: [
+          Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 560),
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(24, 56, 24, 28),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      isFinished
+                          ? 'A quiet moment, just for you.'
+                          : _selectedMethod.description,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        fontSize: 16,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 36),
+                    const SizedBox(height: 36),
                   // Center converts the column's tight stretch constraint
                   // into a loose one so the pacer keeps its square size.
                   Center(
@@ -459,11 +510,23 @@ class _BreathingSessionScreenState extends State<BreathingSessionScreen>
                     icon: const Icon(Icons.restart_alt_rounded),
                     label: const Text('Reset'),
                   ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
-        ),
+          // Menu button that opens the sidebar. It sits above the content
+          // in the top-left corner and stays clear of the centered column.
+          Positioned(
+            top: 8,
+            left: 8,
+            child: IconButton(
+              icon: const Icon(Icons.menu_rounded),
+              tooltip: 'Open navigation',
+              onPressed: () => Scaffold.of(context).openDrawer(),
+            ),
+          ),
+        ],
       ),
     );
   }
