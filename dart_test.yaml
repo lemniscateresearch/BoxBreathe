@@ -1,0 +1,4 @@
+tags:
+  # Pixel-exact golden image tests. CI excludes them, because the images
+  # are made on macOS and can differ on Linux.
+  golden: {}

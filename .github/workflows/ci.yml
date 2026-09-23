@@ -1,0 +1,90 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# A new push to the same branch or PR cancels the run that is in progress.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+# Every job uses the Nix flake, so CI has the same Flutter version as
+# local development (see flake.lock).
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cachix/install-nix-action@v31
+      - name: Check formatting
+        run: nix develop --command dart format --output=none --set-exit-if-changed .
+
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cachix/install-nix-action@v31
+      - uses: actions/cache@v4
+        with:
+          path: ~/.pub-cache
+          key: pub-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
+      - name: Get dependencies
+        run: nix develop --command flutter pub get
+      - name: Analyze
+        run: nix develop --command flutter analyze
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cachix/install-nix-action@v31
+      - uses: actions/cache@v4
+        with:
+          path: ~/.pub-cache
+          key: pub-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
+      - name: Get dependencies
+        run: nix develop --command flutter pub get
+      # The golden images are made on macOS and can differ on Linux.
+      # Run them locally with `flutter test --tags golden`.
+      - name: Test
+        run: nix develop --command flutter test --exclude-tags golden
+
+  build-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cachix/install-nix-action@v31
+      - uses: actions/cache@v4
+        with:
+          path: ~/.pub-cache
+          key: pub-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('android/**/*.gradle.kts', 'android/gradle/wrapper/gradle-wrapper.properties', 'pubspec.lock') }}
+      # The runner image has the Android SDK (ANDROID_HOME). CI has no
+      # android/key.properties, so the build is signed with the debug key.
+      # This APK is for testing only. It cannot update an install that is
+      # signed with the real upload key.
+      #
+      # CI builds for arm64 only, which almost all current phones use.
+      # Each APK is about 60 MB, so this keeps the storage use low.
+      - name: Build APK
+        run: nix develop --command flutter build apk --release --split-per-abi --target-platform android-arm64
+      - uses: actions/upload-artifact@v4
+        with:
+          # On a pull request, github.sha is a temporary merge commit, so
+          # use the commit at the head of the pull request.
+          name: BoxBreathe-apk-arm64-debug-signed-${{ github.event.pull_request.head.sha || github.sha }}
+          path: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+          retention-days: 3
+          if-no-files-found: error

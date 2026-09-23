@@ -1,12 +1,18 @@
+/// Renders the breathing pacer for every method to PNG files under
+/// test/goldens/. Run with:
+///   flutter test --update-goldens
+/// The PNGs are inspected manually to verify the drawn geometry.
+///
+/// CI skips this test (tag `golden`), because the images are made on
+/// macOS and can differ on Linux.
+@Tags(['golden'])
+library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:box_breathe/app/app.dart';
 
-/// Renders the breathing pacer for every method to PNG files under
-/// test/goldens/. Run with:
-///   flutter test --update-goldens
-/// The PNGs are inspected manually to verify the drawn geometry.
 void main() {
   testWidgets('renders pacer goldens for every method', (tester) async {
     await tester.binding.setSurfaceSize(const Size(412, 915));
