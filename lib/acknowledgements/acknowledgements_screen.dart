@@ -61,14 +61,6 @@ class AcknowledgementsScreen extends StatelessWidget {
               _TrackCredit(track),
           ],
 
-          const _SectionTitle('Sounds'),
-          Text(
-            'The cue tones were made for BoxBreathe with the script '
-            'tool/generate_tones.dart. The spoken cues use the '
-            'text-to-speech voice of your device.',
-            style: muted,
-          ),
-
           const SizedBox(height: 32),
           Center(
             child: OutlinedButton.icon(
