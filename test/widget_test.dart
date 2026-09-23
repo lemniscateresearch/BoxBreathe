@@ -10,56 +10,53 @@ void main() {
 
     expect(find.text('3:00'), findsOneWidget);
 
-    final startButton = find.text('Start session');
-    await tester.ensureVisible(startButton);
-    await tester.tap(startButton);
+    await tester.tap(find.text('Start session'));
     await tester.pump();
 
     expect(find.text('Pause session'), findsOneWidget);
     expect(find.text('Breathe in'), findsOneWidget);
   });
 
-  testWidgets('selects a breathing method before a session starts', (
-    tester,
-  ) async {
+  testWidgets('selects a breathing method in the setup sheet', (tester) async {
     await tester.pumpWidget(const BoxBreatheApp());
+
+    await tester.tap(find.text('Box · 3 min'));
+    await tester.pumpAndSettle();
 
     expect(find.text('Box'), findsOneWidget);
     expect(find.text('Figure eight'), findsOneWidget);
     expect(find.text('Triangle'), findsOneWidget);
 
-    final startButton = find.text('Start session');
-    await tester.ensureVisible(startButton);
-    await tester.tap(startButton);
-    await tester.pump();
-
-    // While the session runs, the method selector is disabled.
-    final figureEightChip = find.text('Figure eight');
-    await tester.ensureVisible(figureEightChip);
-    await tester.tap(figureEightChip, warnIfMissed: false);
-    await tester.pump();
-    expect(find.text('Trace the square. In, hold, out, hold.'), findsOneWidget);
-
-    // After a reset, the user can select another method.
-    final resetButton = find.text('Reset');
-    await tester.ensureVisible(resetButton);
-    await tester.tap(resetButton);
-    await tester.pump();
-
-    await tester.ensureVisible(figureEightChip);
-    await tester.tap(figureEightChip);
+    await tester.tap(find.text('Figure eight'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Done'));
     await tester.pumpAndSettle();
 
+    expect(find.text('Figure eight · 3 min'), findsOneWidget);
     expect(
       find.text('Trace the eight. In on one loop, out on the other.'),
       findsOneWidget,
     );
 
     // The figure-eight method starts with a breathe-in phase.
-    await tester.ensureVisible(startButton);
-    await tester.tap(startButton);
+    await tester.tap(find.text('Start session'));
     await tester.pump();
     expect(find.text('Breathe in'), findsOneWidget);
+  });
+
+  testWidgets('hides the setup while a session runs', (tester) async {
+    await tester.pumpWidget(const BoxBreatheApp());
+
+    await tester.tap(find.text('Start session'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.text('Box · 3 min'), findsNothing);
+
+    // After a reset, the setup comes back.
+    await tester.tap(find.byTooltip('Reset'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.text('Box · 3 min'), findsOneWidget);
   });
 
   testWidgets('opens the sidebar from the breathing page', (tester) async {
@@ -86,9 +83,12 @@ void main() {
     await tester.tap(find.text('Airway clearance'));
     await tester.pumpAndSettle();
 
-    // ACBT is the default routine.
-    expect(find.text('Full cycle (ACBT)'), findsOneWidget);
+    // ACBT is the default routine. The setup sheet shows both routines.
+    await tester.tap(find.text('Full cycle (ACBT)'));
+    await tester.pumpAndSettle();
     expect(find.text('Huffs with rests'), findsOneWidget);
+    await tester.tap(find.text('Done'));
+    await tester.pumpAndSettle();
 
     final startButton = find.text('Start session');
     await tester.ensureVisible(startButton);

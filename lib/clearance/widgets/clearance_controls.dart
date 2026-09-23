@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../../common/session_status.dart';
+import '../../common/widgets/session_buttons.dart';
 import '../clearance_session.dart';
 
-/// The primary button, with a reset button below it. At a huff step the
+/// The primary button, with a reset button next to it. At a huff step the
 /// primary button becomes Done, so the user can move on when they are
 /// ready.
 class ClearanceControls extends StatelessWidget {
@@ -44,28 +45,11 @@ class ClearanceControls extends StatelessWidget {
       ),
     };
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        FilledButton.icon(
-          onPressed: onPressed,
-          icon: Icon(icon),
-          label: Text(label),
-          style: FilledButton.styleFrom(
-            minimumSize: const Size.fromHeight(56),
-            textStyle: const TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-        const SizedBox(height: 10),
-        TextButton.icon(
-          onPressed: status == SessionStatus.idle ? null : session.reset,
-          icon: const Icon(Icons.restart_alt_rounded),
-          label: const Text('Reset'),
-        ),
-      ],
+    return SessionButtons(
+      label: label,
+      icon: icon,
+      onPressed: onPressed,
+      onReset: status == SessionStatus.idle ? null : session.reset,
     );
   }
 }

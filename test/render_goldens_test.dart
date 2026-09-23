@@ -31,30 +31,21 @@ void main() {
         ),
       );
 
-      final chip = find.text(label);
-      await tester.ensureVisible(chip);
-      await tester.tap(chip);
+      // Select the method in the setup sheet.
+      await tester.tap(find.text('Box · 3 min'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(label));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Done'));
       await tester.pumpAndSettle();
 
       // Start a session and advance into the first phase so the traced
-      // segment and the dot are visible.
-      final startButton = find.text('Start session');
-      await tester.ensureVisible(startButton);
-      await tester.tap(startButton);
+      // segment and the dot are visible. By then the setup area is gone.
+      await tester.tap(find.text('Start session'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 1400));
 
-      // Scroll back to the top so the whole pacer is inside the capture.
-      final scrollable = tester.state<ScrollableState>(
-        find.byType(Scrollable).first,
-      );
-      scrollable.position.jumpTo(0);
-      await tester.pumpAndSettle();
-
-      await expectLater(
-        find.byKey(boundaryKey),
-        matchesGoldenFile(file),
-      );
+      await expectLater(find.byKey(boundaryKey), matchesGoldenFile(file));
     }
   });
 }
