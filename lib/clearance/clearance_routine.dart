@@ -1,10 +1,8 @@
+import '../common/int_range.dart';
 import 'clearance_step.dart';
 
-/// The counts and durations of an airway clearance session.
-///
-/// The app uses [defaults] for now. To make the routine adjustable, give
-/// the user a way to edit these values and pass the result to the
-/// session.
+/// The counts and durations of an airway clearance session. The user
+/// can change them on the settings page, within the ranges below.
 class ClearanceSettings {
   const ClearanceSettings({
     required this.cycles,
@@ -28,6 +26,12 @@ class ClearanceSettings {
     huffsPerSet: 2,
   );
 
+  static const cyclesRange = IntRange(1, 5);
+  static const breathingControlSecondsRange = IntRange(10, 60, step: 5);
+  static const deepBreathsRange = IntRange(1, 5);
+  static const deepBreathSecondsRange = IntRange(2, 6);
+  static const huffsPerSetRange = IntRange(1, 3);
+
   final int cycles;
   final Duration breathingControl;
   final int deepBreaths;
@@ -35,6 +39,61 @@ class ClearanceSettings {
   final Duration deepBreathHold;
   final Duration deepBreathOut;
   final int huffsPerSet;
+
+  ClearanceSettings copyWith({
+    int? cycles,
+    Duration? breathingControl,
+    int? deepBreaths,
+    Duration? deepBreathIn,
+    Duration? deepBreathHold,
+    Duration? deepBreathOut,
+    int? huffsPerSet,
+  }) => ClearanceSettings(
+    cycles: cycles ?? this.cycles,
+    breathingControl: breathingControl ?? this.breathingControl,
+    deepBreaths: deepBreaths ?? this.deepBreaths,
+    deepBreathIn: deepBreathIn ?? this.deepBreathIn,
+    deepBreathHold: deepBreathHold ?? this.deepBreathHold,
+    deepBreathOut: deepBreathOut ?? this.deepBreathOut,
+    huffsPerSet: huffsPerSet ?? this.huffsPerSet,
+  );
+
+  /// Moves every value into its permitted range.
+  ClearanceSettings clamped() {
+    Duration seconds(Duration value, IntRange range) =>
+        Duration(seconds: range.clamp(value.inSeconds));
+    return ClearanceSettings(
+      cycles: cyclesRange.clamp(cycles),
+      breathingControl: seconds(breathingControl, breathingControlSecondsRange),
+      deepBreaths: deepBreathsRange.clamp(deepBreaths),
+      deepBreathIn: seconds(deepBreathIn, deepBreathSecondsRange),
+      deepBreathHold: seconds(deepBreathHold, deepBreathSecondsRange),
+      deepBreathOut: seconds(deepBreathOut, deepBreathSecondsRange),
+      huffsPerSet: huffsPerSetRange.clamp(huffsPerSet),
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      other is ClearanceSettings &&
+      other.cycles == cycles &&
+      other.breathingControl == breathingControl &&
+      other.deepBreaths == deepBreaths &&
+      other.deepBreathIn == deepBreathIn &&
+      other.deepBreathHold == deepBreathHold &&
+      other.deepBreathOut == deepBreathOut &&
+      other.huffsPerSet == huffsPerSet;
+
+  @override
+  int get hashCode => Object.hash(
+    cycles,
+    breathingControl,
+    deepBreaths,
+    deepBreathIn,
+    deepBreathHold,
+    deepBreathOut,
+    huffsPerSet,
+  );
 }
 
 enum ClearanceRoutine { acbt, huffsWithRests }

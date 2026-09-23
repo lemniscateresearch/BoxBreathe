@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../common/widgets/option_picker.dart';
 import '../common/widgets/step_prompt.dart';
+import '../settings/settings_scope.dart';
 import 'breathing_method.dart';
 import 'breathing_phase.dart';
 import 'breathing_session.dart';
@@ -20,7 +21,12 @@ class BreathingScreen extends StatefulWidget {
 
 class _BreathingScreenState extends State<BreathingScreen>
     with SingleTickerProviderStateMixin {
-  late final _session = BreathingSession(vsync: this);
+  late final _session = BreathingSession(
+    vsync: this,
+    phaseLength: Duration(
+      seconds: SettingsScope.read(context).settings.breathingPhaseSeconds,
+    ),
+  );
 
   @override
   void dispose() {
