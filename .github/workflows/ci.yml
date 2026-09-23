@@ -73,17 +73,18 @@ jobs:
           key: gradle-${{ runner.os }}-${{ hashFiles('android/**/*.gradle.kts', 'android/gradle/wrapper/gradle-wrapper.properties', 'pubspec.lock') }}
       # The runner image has the Android SDK (ANDROID_HOME). CI has no
       # android/key.properties, so the build is signed with the debug key.
-      # These APKs are for testing only. They cannot update an install
-      # that is signed with the real upload key.
-      - name: Build APKs
-        run: nix develop --command flutter build apk --release --split-per-abi
-      # Each run uploads about 100 MB, so keep the artefacts for a short
-      # time only.
+      # This APK is for testing only. It cannot update an install that is
+      # signed with the real upload key.
+      #
+      # CI builds for arm64 only, which almost all current phones use.
+      # Each APK is about 60 MB, so this keeps the storage use low.
+      - name: Build APK
+        run: nix develop --command flutter build apk --release --split-per-abi --target-platform android-arm64
       - uses: actions/upload-artifact@v4
         with:
           # On a pull request, github.sha is a temporary merge commit, so
           # use the commit at the head of the pull request.
-          name: BoxBreathe-apks-debug-signed-${{ github.event.pull_request.head.sha || github.sha }}
-          path: build/app/outputs/flutter-apk/*.apk
+          name: BoxBreathe-apk-arm64-debug-signed-${{ github.event.pull_request.head.sha || github.sha }}
+          path: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
           retention-days: 3
           if-no-files-found: error
