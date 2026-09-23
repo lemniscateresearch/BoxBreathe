@@ -489,13 +489,15 @@ class _BreathingPacer extends StatelessWidget {
           : '${phase.title}. Follow the dot along the shape.',
       child: AnimatedBuilder(
         animation: animation,
-        builder: (context, _) => CustomPaint(
-          size: const Size.square(260),
-          painter: _BreathingPacerPainter(
-            method: method,
-            phaseIndex: phaseIndex,
-            phaseProgress: animation.value,
-            isFinished: isFinished,
+        builder: (context, _) => SizedBox.square(
+          dimension: 260,
+          child: CustomPaint(
+            painter: _BreathingPacerPainter(
+              method: method,
+              phaseIndex: phaseIndex,
+              phaseProgress: animation.value,
+              isFinished: isFinished,
+            ),
           ),
         ),
       ),
