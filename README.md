@@ -56,3 +56,7 @@ Android installs an update only when the update has the same signature as the in
    ```
 
 If `android/key.properties` does not exist, the release build uses the debug key. Gradle writes a warning, but Flutter shows it only with `-v`. Do not install that build on a phone that you want to update later.
+
+## License
+
+The code is released under the [MIT License](./LICENSE). The music in `assets/music/` is CC0. See [CREDITS.md](./CREDITS.md).
