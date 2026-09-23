@@ -42,20 +42,29 @@ Path _trianglePath(Size size, double inset) {
 }
 
 Path _figureEightPath(Size size, double inset) {
-  // Gerono lemniscate: x = a * cos(t), y = b * sin(2t) / 2.
-  // The path starts at the center crossing. The first half of the path
-  // traces the right loop (breathe in), the second half traces the left
-  // loop (breathe out).
+  // Lemniscate of Bernoulli:
+  //   x = a * cos(t) / (1 + sin²(t))
+  //   y = a * sin(t) * cos(t) / (1 + sin²(t))
+  // The path starts at the center crossing (t = -π/2). The first half of
+  // the path traces the right loop (breathe in), the second half traces
+  // the left loop (breathe out).
   final centerX = size.width / 2;
   final centerY = size.height / 2;
-  final amplitudeX = size.width / 2 - inset;
-  final amplitudeY = amplitudeX * 0.6;
-  const samples = 96;
+  final a = size.width / 2 - inset;
+
+  // At its tallest, a loop reaches a / (2√2) above and below the center.
+  // Raise this factor for taller loops, up to 2√2 ≈ 2.83 to fill the square.
+  const heightScale = 1.0;
+
+  const samples = 128;
   final path = Path();
   for (var i = 0; i <= samples; i++) {
     final t = -math.pi / 2 + (2 * math.pi * i) / samples;
-    final x = centerX + amplitudeX * math.cos(t);
-    final y = centerY - amplitudeY * math.sin(2 * t);
+    final sinT = math.sin(t);
+    final cosT = math.cos(t);
+    final denominator = 1 + sinT * sinT;
+    final x = centerX + a * cosT / denominator;
+    final y = centerY - heightScale * a * sinT * cosT / denominator;
     if (i == 0) {
       path.moveTo(x, y);
     } else {
