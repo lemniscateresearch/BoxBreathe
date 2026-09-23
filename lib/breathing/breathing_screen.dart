@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../common/widgets/option_picker.dart';
 import 'breathing_method.dart';
 import 'breathing_session.dart';
 import 'widgets/breathing_pacer.dart';
-import 'widgets/option_picker.dart';
 import 'widgets/phase_prompt.dart';
 import 'widgets/session_clock.dart';
 import 'widgets/session_controls.dart';

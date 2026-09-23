@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:box_breathe/breathing/breathing_method.dart';
 import 'package:box_breathe/breathing/breathing_phase.dart';
 import 'package:box_breathe/breathing/breathing_session.dart';
+import 'package:box_breathe/common/session_status.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
