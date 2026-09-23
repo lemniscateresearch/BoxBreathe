@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 
 void main() => runApp(const BoxBreatheApp());
@@ -8,22 +9,40 @@ class BoxBreatheApp extends StatelessWidget {
   const BoxBreatheApp({super.key});
 
   @override
-  Widget build(BuildContext context) => MaterialApp(
-    title: 'BoxBreathe',
-    debugShowCheckedModeBanner: false,
-    theme: ThemeData(
-      useMaterial3: true,
-      scaffoldBackgroundColor: const Color(0xFFF6F8F6),
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: const Color(0xFF163C34),
-        surface: const Color(0xFFF6F8F6),
-      ),
-      textTheme: ThemeData.light().textTheme.apply(
-        bodyColor: const Color(0xFF163C34),
-        displayColor: const Color(0xFF163C34),
-      ),
+  Widget build(BuildContext context) => DynamicColorBuilder(
+    builder: (lightDynamic, darkDynamic) {
+      final ColorScheme lightScheme =
+          lightDynamic ??
+          ColorScheme.fromSeed(
+            seedColor: const Color(0xFF163C34),
+            surface: const Color(0xFFF6F8F6),
+          );
+      final ColorScheme darkScheme =
+          darkDynamic ??
+          ColorScheme.fromSeed(
+            seedColor: const Color(0xFF163C34),
+            brightness: Brightness.dark,
+          );
+
+      return MaterialApp(
+        title: 'BoxBreathe',
+        debugShowCheckedModeBanner: false,
+        theme: _themeFor(lightScheme),
+        darkTheme: _themeFor(darkScheme),
+        themeMode: ThemeMode.system,
+        home: const BreathingSessionScreen(),
+      );
+    },
+  );
+
+  ThemeData _themeFor(ColorScheme colorScheme) => ThemeData(
+    useMaterial3: true,
+    colorScheme: colorScheme,
+    scaffoldBackgroundColor: colorScheme.surface,
+    textTheme: ThemeData(brightness: colorScheme.brightness).textTheme.apply(
+      bodyColor: colorScheme.onSurface,
+      displayColor: colorScheme.onSurface,
     ),
-    home: const BreathingSessionScreen(),
   );
 }
 
