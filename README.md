@@ -1,6 +1,6 @@
 # BoxBreathe
 
-A calm breathing companion for guided box-breathing sessions. The project targets Android first and includes an iOS runner for a future port.
+A calm breathing companion for guided breathing sessions. The app supports three methods: box breathing, figure-eight breathing, and triangle breathing. The user follows a dot that travels along the chosen shape. The project targets Android first and includes an iOS runner for a future port.
 
 ## Dedication
 

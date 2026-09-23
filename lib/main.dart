@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
@@ -56,9 +57,9 @@ extension BreathingPhaseDetails on BreathingPhase {
   };
 
   String get cue => switch (this) {
-    BreathingPhase.inhale => 'Let the square grow with your breath.',
+    BreathingPhase.inhale => 'Let the shape guide your breath in.',
     BreathingPhase.holdAfterInhale => 'Keep a gentle, comfortable hold.',
-    BreathingPhase.exhale => 'Let the square soften as you breathe out.',
+    BreathingPhase.exhale => 'Let the shape guide your breath out.',
     BreathingPhase.holdAfterExhale => 'Rest here before the next breath.',
   };
 
@@ -68,6 +69,102 @@ extension BreathingPhaseDetails on BreathingPhase {
     BreathingPhase.exhale => const Color(0xFF6B8DC4),
     BreathingPhase.holdAfterExhale => const Color(0xFF5974A4),
   };
+}
+
+enum BreathingMethod { box, figureEight, triangle }
+
+extension BreathingMethodDetails on BreathingMethod {
+  String get label => switch (this) {
+    BreathingMethod.box => 'Box',
+    BreathingMethod.figureEight => 'Figure eight',
+    BreathingMethod.triangle => 'Triangle',
+  };
+
+  String get description => switch (this) {
+    BreathingMethod.box => 'Trace the square. In, hold, out, hold.',
+    BreathingMethod.figureEight =>
+      'Trace the eight. In on one loop, out on the other.',
+    BreathingMethod.triangle => 'Trace the triangle. In, hold, out.',
+  };
+
+  List<BreathingPhase> get phases => switch (this) {
+    BreathingMethod.box => const [
+      BreathingPhase.inhale,
+      BreathingPhase.holdAfterInhale,
+      BreathingPhase.exhale,
+      BreathingPhase.holdAfterExhale,
+    ],
+    BreathingMethod.figureEight => const [
+      BreathingPhase.inhale,
+      BreathingPhase.exhale,
+    ],
+    BreathingMethod.triangle => const [
+      BreathingPhase.inhale,
+      BreathingPhase.holdAfterInhale,
+      BreathingPhase.exhale,
+    ],
+  };
+
+  /// Builds the outline that the breathing dot travels along.
+  ///
+  /// The path starts at the beginning of the first phase and has one
+  /// equally-long segment for each phase in [phases].
+  Path path(Size size, double inset) => switch (this) {
+    BreathingMethod.box => _boxPath(size, inset),
+    BreathingMethod.figureEight => _figureEightPath(size, inset),
+    BreathingMethod.triangle => _trianglePath(size, inset),
+  };
+}
+
+Path _boxPath(Size size, double inset) {
+  final left = inset;
+  final top = inset;
+  final right = size.width - inset;
+  final bottom = size.height - inset;
+  return Path()
+    ..moveTo(left, bottom)
+    ..lineTo(left, top)
+    ..lineTo(right, top)
+    ..lineTo(right, bottom)
+    ..close();
+}
+
+Path _trianglePath(Size size, double inset) {
+  // Equilateral triangle so that all three sides have the same length.
+  final side = size.width - 2 * inset;
+  final height = side * math.sqrt(3) / 2;
+  final centerX = size.width / 2;
+  final top = inset + (size.height - height) / 2;
+  final bottom = top + height;
+  return Path()
+    ..moveTo(centerX - side / 2, bottom)
+    ..lineTo(centerX, top)
+    ..lineTo(centerX + side / 2, bottom)
+    ..close();
+}
+
+Path _figureEightPath(Size size, double inset) {
+  // Gerono lemniscate: x = a * cos(t), y = b * sin(2t) / 2.
+  // The path starts at the center crossing. The first half of the path
+  // traces the right loop (breathe in), the second half traces the left
+  // loop (breathe out).
+  final centerX = size.width / 2;
+  final centerY = size.height / 2;
+  final amplitudeX = size.width / 2 - inset;
+  final amplitudeY = size.height / 2 - inset;
+  const samples = 96;
+  final path = Path();
+  for (var i = 0; i <= samples; i++) {
+    final t = -math.pi / 2 + (2 * math.pi * i) / samples;
+    final x = centerX + amplitudeX * math.cos(t);
+    final y = centerY - amplitudeY * math.sin(2 * t);
+    if (i == 0) {
+      path.moveTo(x, y);
+    } else {
+      path.lineTo(x, y);
+    }
+  }
+  return path;
 }
 
 class BreathingSessionScreen extends StatefulWidget {
@@ -89,8 +186,11 @@ class _BreathingSessionScreenState extends State<BreathingSessionScreen>
   int _phaseIndex = 0;
   bool _isRunning = false;
   bool _isPaused = false;
+  BreathingMethod _selectedMethod = BreathingMethod.box;
 
-  BreathingPhase get _phase => BreathingPhase.values[_phaseIndex];
+  List<BreathingPhase> get _phases => _selectedMethod.phases;
+
+  BreathingPhase get _phase => _phases[_phaseIndex];
 
   @override
   void initState() {
@@ -162,7 +262,7 @@ class _BreathingSessionScreenState extends State<BreathingSessionScreen>
 
   void _advancePhase() {
     setState(
-      () => _phaseIndex = (_phaseIndex + 1) % BreathingPhase.values.length,
+      () => _phaseIndex = (_phaseIndex + 1) % _phases.length,
     );
     _phaseController
       ..reset()
@@ -177,6 +277,15 @@ class _BreathingSessionScreenState extends State<BreathingSessionScreen>
     });
   }
 
+  void _selectMethod(BreathingMethod method) {
+    if (_isRunning || _isPaused) return;
+    _phaseController.reset();
+    setState(() {
+      _selectedMethod = method;
+      _phaseIndex = 0;
+    });
+  }
+
   String get _formattedTime {
     final minutes = _secondsRemaining ~/ 60;
     final seconds = _secondsRemaining % 60;
@@ -186,7 +295,7 @@ class _BreathingSessionScreenState extends State<BreathingSessionScreen>
   @override
   Widget build(BuildContext context) {
     final isFinished = _secondsRemaining == 0;
-    final canChooseDuration = !_isRunning && !_isPaused;
+    final canAdjustSettings = !_isRunning && !_isPaused;
 
     return Scaffold(
       body: SafeArea(
@@ -207,7 +316,7 @@ class _BreathingSessionScreenState extends State<BreathingSessionScreen>
                   Text(
                     isFinished
                         ? 'A quiet moment, just for you.'
-                        : 'Four steady counts. One calmer breath at a time.',
+                        : _selectedMethod.description,
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -215,9 +324,10 @@ class _BreathingSessionScreenState extends State<BreathingSessionScreen>
                     ),
                   ),
                   const SizedBox(height: 36),
-                  _BreathingSquare(
+                  _BreathingPacer(
                     animation: _phaseController,
-                    phase: _phase,
+                    method: _selectedMethod,
+                    phaseIndex: _phaseIndex,
                     isFinished: isFinished,
                   ),
                   const SizedBox(height: 28),
@@ -266,6 +376,29 @@ class _BreathingSessionScreenState extends State<BreathingSessionScreen>
                   ),
                   const SizedBox(height: 34),
                   const Text(
+                    'Choose a breathing shape',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                  ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: BreathingMethod.values
+                        .map(
+                          (method) => ChoiceChip(
+                            label: Text(method.label),
+                            selected: _selectedMethod == method,
+                            onSelected: canAdjustSettings
+                                ? (_) => _selectMethod(method)
+                                : null,
+                          ),
+                        )
+                        .toList(),
+                  ),
+                  const SizedBox(height: 26),
+                  const Text(
                     'Choose a session length',
                     textAlign: TextAlign.center,
                     style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
@@ -280,7 +413,7 @@ class _BreathingSessionScreenState extends State<BreathingSessionScreen>
                           (minutes) => ChoiceChip(
                             label: Text('$minutes min'),
                             selected: _selectedMinutes == minutes,
-                            onSelected: canChooseDuration
+                            onSelected: canAdjustSettings
                                 ? (_) => _selectDuration(minutes)
                                 : null,
                           ),
@@ -332,57 +465,117 @@ class _BreathingSessionScreenState extends State<BreathingSessionScreen>
   }
 }
 
-class _BreathingSquare extends StatelessWidget {
-  const _BreathingSquare({
+/// Shows the breathing shape with a dot that travels along its outline.
+/// One phase of the breathing method equals one side or loop of the shape.
+class _BreathingPacer extends StatelessWidget {
+  const _BreathingPacer({
     required this.animation,
-    required this.phase,
+    required this.method,
+    required this.phaseIndex,
     required this.isFinished,
   });
 
   final Animation<double> animation;
-  final BreathingPhase phase;
+  final BreathingMethod method;
+  final int phaseIndex;
   final bool isFinished;
 
   @override
-  Widget build(BuildContext context) => Semantics(
-    label: isFinished
-        ? 'Breathing session complete'
-        : '${phase.title}. Follow the moving square.',
-    child: AnimatedBuilder(
-      animation: animation,
-      builder: (context, child) {
-        final progress = animation.value;
-        final scale = switch (phase) {
-          BreathingPhase.inhale => 0.62 + (0.38 * progress),
-          BreathingPhase.holdAfterInhale => 1.0,
-          BreathingPhase.exhale => 1.0 - (0.38 * progress),
-          BreathingPhase.holdAfterExhale => 0.62,
-        };
-        return SizedBox.square(
-          dimension: 230,
-          child: Center(
-            child: Transform.scale(
-              scale: isFinished ? 0.62 : scale,
-              child: Container(
-                width: 190,
-                height: 190,
-                decoration: BoxDecoration(
-                  color: phase.color.withValues(alpha: 0.14),
-                  border: Border.all(color: phase.color, width: 7),
-                  borderRadius: BorderRadius.circular(18),
-                  boxShadow: [
-                    BoxShadow(
-                      color: phase.color.withValues(alpha: 0.16),
-                      blurRadius: 28,
-                      spreadRadius: 4,
-                    ),
-                  ],
-                ),
-              ),
-            ),
+  Widget build(BuildContext context) {
+    final phase = method.phases[phaseIndex];
+    return Semantics(
+      label: isFinished
+          ? 'Breathing session complete'
+          : '${phase.title}. Follow the dot along the shape.',
+      child: AnimatedBuilder(
+        animation: animation,
+        builder: (context, _) => CustomPaint(
+          size: const Size.square(260),
+          painter: _BreathingPacerPainter(
+            method: method,
+            phaseIndex: phaseIndex,
+            phaseProgress: animation.value,
+            isFinished: isFinished,
           ),
-        );
-      },
-    ),
-  );
+        ),
+      ),
+    );
+  }
+}
+
+class _BreathingPacerPainter extends CustomPainter {
+  _BreathingPacerPainter({
+    required this.method,
+    required this.phaseIndex,
+    required this.phaseProgress,
+    required this.isFinished,
+  });
+
+  static const _strokeWidth = 7.0;
+  static const _inset = 24.0;
+
+  final BreathingMethod method;
+  final int phaseIndex;
+  final double phaseProgress;
+  final bool isFinished;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final path = method.path(size, _inset);
+    final metric = path.computeMetrics().first;
+    final segmentLength = metric.length / method.phases.length;
+    final activeColor = method.phases[phaseIndex].color;
+
+    // Draw every side or loop in the color of its phase.
+    for (var i = 0; i < method.phases.length; i++) {
+      final isActive = !isFinished && i == phaseIndex;
+      final segment = metric.extractPath(
+        segmentLength * i,
+        segmentLength * (i + 1),
+      );
+      canvas.drawPath(
+        segment,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = _strokeWidth
+          ..strokeCap = StrokeCap.round
+          ..color = method.phases[i].color.withValues(
+            alpha: isActive ? 0.45 : 0.22,
+          ),
+      );
+    }
+
+    if (isFinished) return;
+
+    // Draw the part of the current segment that the user has already traced.
+    final start = segmentLength * phaseIndex;
+    canvas.drawPath(
+      metric.extractPath(start, start + segmentLength * phaseProgress),
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = _strokeWidth
+        ..strokeCap = StrokeCap.round
+        ..color = activeColor,
+    );
+
+    // Draw the dot that the user follows.
+    final tangent = metric.getTangentForOffset(
+      start + segmentLength * phaseProgress,
+    );
+    if (tangent != null) {
+      canvas.drawCircle(
+        tangent.position,
+        18,
+        Paint()..color = activeColor.withValues(alpha: 0.18),
+      );
+      canvas.drawCircle(tangent.position, 9, Paint()..color = activeColor);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _BreathingPacerPainter oldDelegate) =>
+      oldDelegate.method != method ||
+      oldDelegate.phaseIndex != phaseIndex ||
+      oldDelegate.phaseProgress != phaseProgress ||
+      oldDelegate.isFinished != isFinished;
 }
