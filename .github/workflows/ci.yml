@@ -81,7 +81,9 @@ jobs:
       # time only.
       - uses: actions/upload-artifact@v4
         with:
-          name: BoxBreathe-apks-debug-signed-${{ github.sha }}
+          # On a pull request, github.sha is a temporary merge commit, so
+          # use the commit at the head of the pull request.
+          name: BoxBreathe-apks-debug-signed-${{ github.event.pull_request.head.sha || github.sha }}
           path: build/app/outputs/flutter-apk/*.apk
           retention-days: 3
           if-no-files-found: error
