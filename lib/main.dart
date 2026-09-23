@@ -324,11 +324,15 @@ class _BreathingSessionScreenState extends State<BreathingSessionScreen>
                     ),
                   ),
                   const SizedBox(height: 36),
-                  _BreathingPacer(
-                    animation: _phaseController,
-                    method: _selectedMethod,
-                    phaseIndex: _phaseIndex,
-                    isFinished: isFinished,
+                  // Center converts the column's tight stretch constraint
+                  // into a loose one so the pacer keeps its square size.
+                  Center(
+                    child: _BreathingPacer(
+                      animation: _phaseController,
+                      method: _selectedMethod,
+                      phaseIndex: _phaseIndex,
+                      isFinished: isFinished,
+                    ),
                   ),
                   const SizedBox(height: 28),
                   AnimatedSwitcher(
