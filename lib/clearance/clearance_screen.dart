@@ -84,6 +84,7 @@ class _ClearanceScreenState extends State<ClearanceScreen>
           child: ClearanceVisual(
             animation: session.stepProgress,
             step: step,
+            isRunning: session.isRunning,
             isFinished: session.isFinished,
           ),
         ),

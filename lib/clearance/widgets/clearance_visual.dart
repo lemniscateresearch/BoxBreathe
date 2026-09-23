@@ -3,59 +3,88 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../clearance_step.dart';
+import 'candle_visual.dart';
 
 /// Shows a circle that follows the current step: it grows while the
 /// user breathes in, stays full during the hold, shrinks while they
 /// breathe out, and pulses gently during relaxed breathing. An outer
 /// ring fills up as a timed step runs.
-class ClearanceVisual extends StatelessWidget {
+///
+/// During a huff, a candle takes the place of the circle. When the user
+/// finishes the huff, the candle blows out before the circle returns.
+class ClearanceVisual extends StatefulWidget {
   const ClearanceVisual({
     super.key,
     required this.animation,
     required this.step,
+    required this.isRunning,
     required this.isFinished,
   });
 
   final Animation<double> animation;
   final ClearanceStep step;
+  final bool isRunning;
   final bool isFinished;
 
   @override
-  Widget build(BuildContext context) => Semantics(
-    label: isFinished
-        ? 'Airway clearance session complete'
-        : '${step.kind.title}. ${step.kind.cue}',
-    child: SizedBox.square(
-      dimension: 260,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          AnimatedBuilder(
-            animation: animation,
-            builder: (context, _) => CustomPaint(
-              size: const Size.square(260),
-              painter: _ClearanceVisualPainter(
-                step: step,
-                progress: animation.value,
-                isFinished: isFinished,
-              ),
-            ),
-          ),
-          if (!isFinished && step.kind == ClearanceStepKind.huff)
-            const ExcludeSemantics(
-              child: Text(
-                'Huff',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 34,
-                  fontWeight: FontWeight.w700,
+  State<ClearanceVisual> createState() => _ClearanceVisualState();
+}
+
+class _ClearanceVisualState extends State<ClearanceVisual> {
+  bool _isBlowingOut = false;
+
+  bool _isHuff(ClearanceStep step) => step.kind == ClearanceStepKind.huff;
+
+  @override
+  void didUpdateWidget(ClearanceVisual oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // A huff that ends while the session runs means the user tapped Done.
+    // A reset or a finished session does not blow the candle out.
+    if (_isHuff(oldWidget.step) && !_isHuff(widget.step) && widget.isRunning) {
+      _isBlowingOut = true;
+    } else if (_isHuff(widget.step) || !widget.isRunning) {
+      _isBlowingOut = false;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final step = widget.step;
+    final isFinished = widget.isFinished;
+    final showCandle = !isFinished && (_isHuff(step) || _isBlowingOut);
+
+    return Semantics(
+      label: isFinished
+          ? 'Airway clearance session complete'
+          : '${step.kind.title}. ${step.kind.cue}',
+      child: SizedBox.square(
+        dimension: 260,
+        child: Stack(
+          children: [
+            AnimatedBuilder(
+              animation: widget.animation,
+              builder: (context, _) => CustomPaint(
+                size: const Size.square(260),
+                painter: _ClearanceVisualPainter(
+                  step: step,
+                  progress: widget.animation.value,
+                  isFinished: isFinished,
+                  showCircle: !showCandle,
                 ),
               ),
             ),
-        ],
+            if (showCandle)
+              CandleVisual(
+                mode: _isBlowingOut
+                    ? CandleMode.blowOut
+                    : CandleMode.demonstrate,
+                onBlownOut: () => setState(() => _isBlowingOut = false),
+              ),
+          ],
+        ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 class _ClearanceVisualPainter extends CustomPainter {
@@ -63,6 +92,7 @@ class _ClearanceVisualPainter extends CustomPainter {
     required this.step,
     required this.progress,
     required this.isFinished,
+    required this.showCircle,
   });
 
   static const _minRadius = 52.0;
@@ -76,6 +106,7 @@ class _ClearanceVisualPainter extends CustomPainter {
   final ClearanceStep step;
   final double progress;
   final bool isFinished;
+  final bool showCircle;
 
   double get _radius {
     if (isFinished) return _minRadius;
@@ -129,28 +160,28 @@ class _ClearanceVisualPainter extends CustomPainter {
       );
     }
 
+    if (!showCircle) return;
+
     final radius = _radius;
-    final isHuff = !isFinished && step.kind == ClearanceStepKind.huff;
     canvas.drawCircle(
       center,
       radius,
-      Paint()..color = color.withValues(alpha: isHuff ? 1 : 0.22),
+      Paint()..color = color.withValues(alpha: 0.22),
     );
-    if (!isHuff) {
-      canvas.drawCircle(
-        center,
-        radius,
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 4
-          ..color = color.withValues(alpha: isFinished ? 0.4 : 1),
-      );
-    }
+    canvas.drawCircle(
+      center,
+      radius,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 4
+        ..color = color.withValues(alpha: isFinished ? 0.4 : 1),
+    );
   }
 
   @override
   bool shouldRepaint(covariant _ClearanceVisualPainter oldDelegate) =>
       oldDelegate.step != step ||
       oldDelegate.progress != progress ||
-      oldDelegate.isFinished != isFinished;
+      oldDelegate.isFinished != isFinished ||
+      oldDelegate.showCircle != showCircle;
 }
