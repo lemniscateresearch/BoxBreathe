@@ -33,11 +33,17 @@ class _AppShellState extends State<AppShell> {
             style: Theme.of(context).textTheme.titleLarge,
           ),
         ),
-        for (final page in _pages)
+        for (final (index, page) in _pages.indexed) ...[
+          if (index > 0 && _pages[index - 1].isExercise && !page.isExercise)
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 28, vertical: 8),
+              child: Divider(),
+            ),
           NavigationDrawerDestination(
             icon: Icon(page.icon),
             label: Text(page.label),
           ),
+        ],
       ],
     ),
     body: _page.buildBody(),
