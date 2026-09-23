@@ -49,7 +49,7 @@ Path _figureEightPath(Size size, double inset) {
   final centerX = size.width / 2;
   final centerY = size.height / 2;
   final amplitudeX = size.width / 2 - inset;
-  final amplitudeY = size.height / 2 - inset;
+  final amplitudeY = amplitudeX * 0.6;
   const samples = 96;
   final path = Path();
   for (var i = 0; i <= samples; i++) {
