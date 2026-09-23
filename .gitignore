@@ -1,0 +1,14 @@
+# Flutter/Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+/build/
+
+# Android Studio
+*.iml
+.idea/
+
+# Local Android SDK configuration
+android/local.properties
