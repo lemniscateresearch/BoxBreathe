@@ -24,6 +24,8 @@ nix develop --command flutter build apk --debug
 
 CI ([`.github/workflows/ci.yml`](./.github/workflows/ci.yml)) checks the formatting, runs the analyzer and runs the tests on each push and pull request. CI does not run the golden image tests, because the images are made on macOS. Run them locally with `nix develop --command flutter test --tags golden`.
 
+Each CI run also builds APKs and keeps them for 3 days in the **Artifacts** section of the run page. CI signs these APKs with the debug key, so use them for tests only. They cannot update an install that has the real upload key.
+
 Before the first Android build, use Android Studio's **SDK Manager** to install **Android SDK Command-line Tools (latest)**, then run `flutter doctor --android-licenses` and accept Google's SDK licenses. These are local Android SDK requirements and are deliberately not accepted automatically.
 
 ### Release builds

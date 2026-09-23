@@ -55,3 +55,33 @@ jobs:
       # Run them locally with `flutter test --tags golden`.
       - name: Test
         run: nix develop --command flutter test --exclude-tags golden
+
+  build-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cachix/install-nix-action@v31
+      - uses: actions/cache@v4
+        with:
+          path: ~/.pub-cache
+          key: pub-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('android/**/*.gradle.kts', 'android/gradle/wrapper/gradle-wrapper.properties', 'pubspec.lock') }}
+      # The runner image has the Android SDK (ANDROID_HOME). CI has no
+      # android/key.properties, so the build is signed with the debug key.
+      # These APKs are for testing only. They cannot update an install
+      # that is signed with the real upload key.
+      - name: Build APKs
+        run: nix develop --command flutter build apk --release --split-per-abi
+      # Each run uploads about 100 MB, so keep the artefacts for a short
+      # time only.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BoxBreathe-apks-debug-signed-${{ github.sha }}
+          path: build/app/outputs/flutter-apk/*.apk
+          retention-days: 3
+          if-no-files-found: error
