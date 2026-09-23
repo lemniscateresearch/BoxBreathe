@@ -3,6 +3,9 @@ import 'dart:async';
 import 'package:flutter/animation.dart';
 import 'package:flutter/foundation.dart';
 
+import '../common/audio/cue_player.dart';
+import '../common/audio/session_cue.dart';
+import '../common/guided_session.dart';
 import '../common/session_status.dart';
 import 'breathing_method.dart';
 import 'breathing_phase.dart';
@@ -12,9 +15,10 @@ import 'breathing_phase.dart';
 ///
 /// The widgets read this state and call its methods. They keep no
 /// session state of their own.
-class BreathingSession extends ChangeNotifier {
+class BreathingSession extends ChangeNotifier implements GuidedSession {
   BreathingSession({
     required TickerProvider vsync,
+    required this._cues,
     Duration phaseLength = const Duration(seconds: 4),
   }) {
     _phaseAnimation = AnimationController(vsync: vsync, duration: phaseLength)
@@ -24,6 +28,8 @@ class BreathingSession extends ChangeNotifier {
   }
 
   static const lengthOptions = [1, 3, 5, 10];
+
+  final CuePlayer _cues;
 
   late final AnimationController _phaseAnimation;
   Timer? _countdown;
@@ -39,6 +45,7 @@ class BreathingSession extends ChangeNotifier {
   int get secondsRemaining => _secondsRemaining;
   int get phaseIndex => _phaseIndex;
   BreathingPhase get phase => _method.phases[_phaseIndex];
+  @override
   SessionStatus get status => _status;
 
   /// Goes from 0 to 1 during each phase.
@@ -61,6 +68,7 @@ class BreathingSession extends ChangeNotifier {
     _status = SessionStatus.running;
     notifyListeners();
     _phaseAnimation.forward();
+    _playPhaseCue();
     _countdown ??= Timer.periodic(const Duration(seconds: 1), (_) => _tick());
   }
 
@@ -68,11 +76,13 @@ class BreathingSession extends ChangeNotifier {
     _status = SessionStatus.paused;
     notifyListeners();
     _phaseAnimation.stop();
+    unawaited(_cues.stop());
   }
 
   void reset() {
     _stopCountdown();
     _phaseAnimation.reset();
+    unawaited(_cues.stop());
     _status = SessionStatus.idle;
     _phaseIndex = 0;
     _secondsRemaining = _minutes * 60;
@@ -111,15 +121,19 @@ class BreathingSession extends ChangeNotifier {
     _secondsRemaining = 0;
     _status = SessionStatus.finished;
     notifyListeners();
+    unawaited(_cues.play(SessionCue.finished, 'Session complete. Well done.'));
   }
 
   void _advancePhase() {
     _phaseIndex = (_phaseIndex + 1) % _method.phases.length;
     notifyListeners();
+    _playPhaseCue();
     _phaseAnimation
       ..reset()
       ..forward();
   }
+
+  void _playPhaseCue() => unawaited(_cues.play(phase.sessionCue, phase.title));
 
   void _stopCountdown() {
     _countdown?.cancel();
@@ -129,6 +143,7 @@ class BreathingSession extends ChangeNotifier {
   @override
   void dispose() {
     _stopCountdown();
+    unawaited(_cues.stop());
     _phaseAnimation.dispose();
     super.dispose();
   }

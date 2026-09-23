@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../common/audio/session_audio.dart';
 import '../common/widgets/option_picker.dart';
 import '../common/widgets/step_prompt.dart';
 import '../settings/settings_scope.dart';
@@ -21,16 +22,26 @@ class BreathingScreen extends StatefulWidget {
 
 class _BreathingScreenState extends State<BreathingScreen>
     with SingleTickerProviderStateMixin {
-  late final _session = BreathingSession(
-    vsync: this,
-    phaseLength: Duration(
-      seconds: SettingsScope.read(context).settings.breathingPhaseSeconds,
-    ),
-  );
+  late final SessionAudio _audio;
+  late final BreathingSession _session;
+
+  @override
+  void initState() {
+    super.initState();
+    final settings = SettingsScope.read(context).settings;
+    _audio = SessionAudio.of(context);
+    _session = BreathingSession(
+      vsync: this,
+      cues: _audio.cues,
+      phaseLength: Duration(seconds: settings.breathingPhaseSeconds),
+    );
+    _audio.playMusicDuring(_session);
+  }
 
   @override
   void dispose() {
     _session.dispose();
+    _audio.dispose();
     super.dispose();
   }
 

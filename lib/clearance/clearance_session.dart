@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 
 import '../common/audio/cue_player.dart';
 import '../common/audio/session_cue.dart';
+import '../common/guided_session.dart';
 import '../common/session_status.dart';
 import 'clearance_routine.dart';
 import 'clearance_step.dart';
@@ -15,7 +16,7 @@ import 'clearance_step.dart';
 /// Timed steps advance on their own. A huff step waits until the user
 /// calls [completeHuff], because a huff and a cough take a different
 /// length of time for each person.
-class ClearanceSession extends ChangeNotifier {
+class ClearanceSession extends ChangeNotifier implements GuidedSession {
   ClearanceSession({
     required TickerProvider vsync,
     required this._cues,
@@ -43,6 +44,7 @@ class ClearanceSession extends ChangeNotifier {
   List<ClearanceStep> get steps => _steps;
   int get stepIndex => _stepIndex;
   ClearanceStep get step => _steps[_stepIndex];
+  @override
   SessionStatus get status => _status;
 
   /// Goes from 0 to 1 during each timed step. It stays at 0 during a huff.

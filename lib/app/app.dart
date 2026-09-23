@@ -1,6 +1,8 @@
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 
+import '../common/audio/audio_scope.dart';
+import '../common/audio/audio_services.dart';
 import '../settings/settings_controller.dart';
 import '../settings/settings_scope.dart';
 import '../settings/settings_store.dart';
@@ -9,9 +11,15 @@ import 'theme.dart';
 
 class BoxBreatheApp extends StatefulWidget {
   /// Without [settings], the app keeps its settings in memory only.
-  const BoxBreatheApp({super.key, this.settings});
+  /// Without [audio], the app is silent. The tests use both defaults.
+  const BoxBreatheApp({
+    super.key,
+    this.settings,
+    this.audio = const SilentAudioServices(),
+  });
 
   final SettingsController? settings;
+  final AudioServices audio;
 
   @override
   State<BoxBreatheApp> createState() => _BoxBreatheAppState();
@@ -31,14 +39,17 @@ class _BoxBreatheAppState extends State<BoxBreatheApp> {
   @override
   Widget build(BuildContext context) => SettingsScope(
     controller: _settings,
-    child: DynamicColorBuilder(
-      builder: (lightDynamic, darkDynamic) => MaterialApp(
-        title: 'BoxBreathe',
-        debugShowCheckedModeBanner: false,
-        theme: buildTheme(lightDynamic ?? fallbackLightScheme),
-        darkTheme: buildTheme(darkDynamic ?? fallbackDarkScheme),
-        themeMode: ThemeMode.system,
-        home: const AppShell(),
+    child: AudioScope(
+      services: widget.audio,
+      child: DynamicColorBuilder(
+        builder: (lightDynamic, darkDynamic) => MaterialApp(
+          title: 'BoxBreathe',
+          debugShowCheckedModeBanner: false,
+          theme: buildTheme(lightDynamic ?? fallbackLightScheme),
+          darkTheme: buildTheme(darkDynamic ?? fallbackDarkScheme),
+          themeMode: ThemeMode.system,
+          home: const AppShell(),
+        ),
       ),
     ),
   );

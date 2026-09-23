@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../common/audio/tts_cue_speaker.dart';
+import '../common/audio/session_audio.dart';
 import '../common/widgets/option_picker.dart';
 import '../common/widgets/step_prompt.dart';
 import '../settings/settings_scope.dart';
@@ -21,15 +21,25 @@ class ClearanceScreen extends StatefulWidget {
 
 class _ClearanceScreenState extends State<ClearanceScreen>
     with SingleTickerProviderStateMixin {
-  late final _session = ClearanceSession(
-    vsync: this,
-    cues: TtsCueSpeaker(),
-    settings: SettingsScope.read(context).settings.clearance,
-  );
+  late final SessionAudio _audio;
+  late final ClearanceSession _session;
+
+  @override
+  void initState() {
+    super.initState();
+    _audio = SessionAudio.of(context);
+    _session = ClearanceSession(
+      vsync: this,
+      cues: _audio.cues,
+      settings: SettingsScope.read(context).settings.clearance,
+    );
+    _audio.playMusicDuring(_session);
+  }
 
   @override
   void dispose() {
     _session.dispose();
+    _audio.dispose();
     super.dispose();
   }
 

@@ -50,7 +50,7 @@ class AppSettings {
   });
 
   static const defaults = AppSettings(
-    cueMode: CueMode.tones,
+    cueMode: CueMode.tonesAndVoice,
     toneStyle: ToneStyle.chimes,
     cueVolume: 0.8,
     musicEnabled: true,

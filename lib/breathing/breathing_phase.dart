@@ -1,5 +1,7 @@
 import 'package:flutter/painting.dart';
 
+import '../common/audio/session_cue.dart';
+
 enum BreathingPhase { inhale, holdAfterInhale, exhale, holdAfterExhale }
 
 extension BreathingPhaseDetails on BreathingPhase {
@@ -14,6 +16,13 @@ extension BreathingPhaseDetails on BreathingPhase {
     BreathingPhase.holdAfterInhale => 'Keep a gentle, comfortable hold.',
     BreathingPhase.exhale => 'Let the shape guide your breath out.',
     BreathingPhase.holdAfterExhale => 'Rest here before the next breath.',
+  };
+
+  SessionCue get sessionCue => switch (this) {
+    BreathingPhase.inhale => SessionCue.breatheIn,
+    BreathingPhase.holdAfterInhale ||
+    BreathingPhase.holdAfterExhale => SessionCue.hold,
+    BreathingPhase.exhale => SessionCue.breatheOut,
   };
 
   Color get color => switch (this) {
