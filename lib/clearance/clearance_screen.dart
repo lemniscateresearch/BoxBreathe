@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../common/cues/tts_cue_speaker.dart';
+import '../common/audio/tts_cue_speaker.dart';
 import '../common/widgets/option_picker.dart';
 import '../common/widgets/step_prompt.dart';
 import '../settings/settings_scope.dart';

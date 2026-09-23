@@ -1,13 +1,14 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 
-import 'cue_speaker.dart';
+import 'cue_player.dart';
+import 'session_cue.dart';
 
-/// Says cues with the platform's text-to-speech engine.
+/// Says the words of each cue with the platform's text-to-speech engine.
 ///
 /// Cues only help the user, so a text-to-speech failure (for example no
 /// engine on the device) is logged and does not stop the session.
-class TtsCueSpeaker implements CueSpeaker {
+class TtsCueSpeaker implements CuePlayer {
   TtsCueSpeaker([FlutterTts? tts]) : _tts = tts ?? FlutterTts();
 
   /// flutter_tts uses 0.5 for the normal rate. A slightly slower rate is
@@ -18,10 +19,10 @@ class TtsCueSpeaker implements CueSpeaker {
   Future<void>? _setup;
 
   @override
-  Future<void> speak(String text) => _guard(() async {
+  Future<void> play(SessionCue cue, String words) => _guard(() async {
     await (_setup ??= _tts.setSpeechRate(_speechRate));
     await _tts.stop();
-    await _tts.speak(text);
+    await _tts.speak(words);
   });
 
   @override
