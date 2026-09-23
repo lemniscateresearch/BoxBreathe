@@ -16,12 +16,14 @@ void main() {
     await tester.tap(startButton);
     await tester.pump();
 
-    final painterBox =
-        tester.renderObjectList<RenderBox>(
-          find.byType(CustomPaint),
-        ).first;
-    expect(painterBox.size.width, painterBox.size.height,
-        reason: 'the pacer canvas must be square');
+    final painterBox = tester
+        .renderObjectList<RenderBox>(find.byType(CustomPaint))
+        .first;
+    expect(
+      painterBox.size.width,
+      painterBox.size.height,
+      reason: 'the pacer canvas must be square',
+    );
     expect(painterBox.size.width, 260);
   });
 }
