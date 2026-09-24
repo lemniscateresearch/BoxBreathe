@@ -1,0 +1,9 @@
+<!-- The full app icon, for iOS and for Android before API 26.
+     The platforms round the corners. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 108 108">
+  <rect width="108" height="108" fill="#163C34"/>
+  <g transform="translate(54 54) scale(1.2) translate(-54 -54)">
+    <rect x="32" y="32" width="44" height="44" rx="9" fill="none" stroke="#A8D5C4" stroke-width="5"/>
+    <circle cx="32" cy="42" r="7" fill="#F4E7D0"/>
+  </g>
+</svg>

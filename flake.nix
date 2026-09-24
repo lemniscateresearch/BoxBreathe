@@ -32,6 +32,8 @@
               pkgs.flutter
               pkgs.jdk17
               pkgs.git
+              # rsvg-convert renders the app icon SVGs (see assets/icon/).
+              pkgs.librsvg
             ];
 
             JAVA_HOME = pkgs.jdk17.home;
