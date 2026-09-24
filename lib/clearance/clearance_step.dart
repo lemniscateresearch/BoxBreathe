@@ -82,4 +82,19 @@ class ClearanceStep {
   final int repetitions;
 
   bool get waitsForUser => duration == null;
+
+  /// Where this step is in a session of [cycles] cycles, for example
+  /// "Cycle 1 of 3 · Huff 2 of 2".
+  String progressLabel(int cycles) {
+    final cycleLabel = 'Cycle $cycle of $cycles';
+    return switch (kind) {
+      ClearanceStepKind.huff =>
+        '$cycleLabel · Huff $repetition of $repetitions',
+      ClearanceStepKind.deepBreathIn ||
+      ClearanceStepKind.deepBreathHold ||
+      ClearanceStepKind.deepBreathOut =>
+        '$cycleLabel · Deep breath $repetition of $repetitions',
+      ClearanceStepKind.breathingControl => cycleLabel,
+    };
+  }
 }

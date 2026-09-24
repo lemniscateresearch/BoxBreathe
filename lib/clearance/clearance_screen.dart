@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../common/audio/session_audio.dart';
 import '../common/widgets/option_picker.dart';
 import '../common/widgets/page_frame.dart';
+import '../common/widgets/safety_note.dart';
 import '../common/widgets/session_layout.dart';
 import '../common/widgets/setup_sheet.dart';
 import '../common/widgets/step_prompt.dart';
@@ -75,7 +76,7 @@ class _ClearanceScreenState extends State<ClearanceScreen>
             : step.kind.cue,
       ),
       details: Text(
-        session.isFinished ? '' : _progressLabel(step),
+        session.isFinished ? '' : step.progressLabel(session.settings.cycles),
         textAlign: TextAlign.center,
         style: mutedStyle.copyWith(fontWeight: FontWeight.w600),
       ),
@@ -96,7 +97,7 @@ class _ClearanceScreenState extends State<ClearanceScreen>
             onPressed: () => _openSetup(context),
           ),
           const SizedBox(height: 12),
-          _safetyNote(context),
+          const SafetyNote(),
         ],
       ),
       controls: ClearanceControls(session: session),
@@ -117,7 +118,7 @@ class _ClearanceScreenState extends State<ClearanceScreen>
           onSelected: _session.selectRoutine,
         ),
         const SizedBox(height: 20),
-        _safetyNote(context),
+        const SafetyNote(),
       ],
     ),
   );
@@ -126,24 +127,4 @@ class _ClearanceScreenState extends State<ClearanceScreen>
     color: Theme.of(context).colorScheme.onSurfaceVariant,
     fontSize: 16,
   );
-
-  Widget _safetyNote(BuildContext context) => Text(
-    'Follow the advice of your physiotherapist or respiratory team. '
-    'Stop and rest if you feel dizzy or short of breath.',
-    textAlign: TextAlign.center,
-    style: _mutedStyle(context).copyWith(fontSize: 13),
-  );
-
-  String _progressLabel(ClearanceStep step) {
-    final cycle = 'Cycle ${step.cycle} of ${_session.settings.cycles}';
-    return switch (step.kind) {
-      ClearanceStepKind.huff =>
-        '$cycle · Huff ${step.repetition} of ${step.repetitions}',
-      ClearanceStepKind.deepBreathIn ||
-      ClearanceStepKind.deepBreathHold ||
-      ClearanceStepKind.deepBreathOut =>
-        '$cycle · Deep breath ${step.repetition} of ${step.repetitions}',
-      ClearanceStepKind.breathingControl => cycle,
-    };
-  }
 }

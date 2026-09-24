@@ -24,6 +24,7 @@ void main() {
     for (final label in const [
       'Breathing',
       'Airway clearance',
+      'Sequences',
       'Settings',
       'Acknowledgements',
     ]) {
