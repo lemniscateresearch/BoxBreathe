@@ -1,6 +1,8 @@
 # BoxBreathe
 
-A calm breathing companion for guided breathing sessions. The app supports three methods: box breathing, figure-eight breathing, and triangle breathing. The user follows a dot that travels along the chosen shape. The project targets Android first and includes an iOS runner for a future port.
+A calm breathing companion for guided breathing sessions. The app supports three methods: box breathing, figure-eight breathing, and triangle breathing. The user follows a dot that travels along the chosen shape. The project targets Android and the web, and includes an iOS runner for a future port.
+
+Open the web version at <https://lemniscateresearch.github.io/BoxBreathe/>.
 
 ## Dedication
 
@@ -56,6 +58,21 @@ Android installs an update only when the update has the same signature as the in
    ```
 
 If `android/key.properties` does not exist, the release build uses the debug key. Gradle writes a warning, but Flutter shows it only with `-v`. Do not install that build on a phone that you want to update later.
+
+## Web version
+
+The web version keeps the settings and sequences in the local storage of the browser only. It has no accounts and no analytics, and it sends no data to a server. The site gets all its files, including the CanvasKit renderer, from its own address.
+
+To build and try the web version locally:
+
+```sh
+nix develop --command flutter build web --release --no-web-resources-cdn
+python3 -m http.server --directory build/web 8000
+```
+
+Browsers play sound only after the user touches the page, so the music and the cues start when the user taps **Start session**.
+
+CI builds the site on each push and pull request. A push to `main` publishes the site to GitHub Pages when the repository variable `DEPLOY_WEB` is `true`.
 
 ## License
 

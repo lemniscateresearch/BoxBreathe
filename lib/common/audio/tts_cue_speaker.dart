@@ -11,9 +11,11 @@ import 'session_cue.dart';
 class TtsCueSpeaker implements CuePlayer {
   TtsCueSpeaker([FlutterTts? tts]) : _tts = tts ?? FlutterTts();
 
-  /// flutter_tts uses 0.5 for the normal rate. A slightly slower rate is
-  /// easier to follow while breathing.
-  static const _speechRate = 0.42;
+  /// A slightly slower rate is easier to follow while breathing. On
+  /// Android and iOS, flutter_tts uses 0.5 for the normal rate. On the
+  /// web it passes the rate to the browser, where 1 is normal. Both
+  /// values give about 84% of the normal speed.
+  static const _speechRate = kIsWeb ? 0.84 : 0.42;
 
   final FlutterTts _tts;
   Future<void>? _setup;
