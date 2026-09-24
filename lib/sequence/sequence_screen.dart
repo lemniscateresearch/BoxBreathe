@@ -7,6 +7,7 @@ import '../common/widgets/safety_note.dart';
 import '../common/widgets/session_layout.dart';
 import '../common/widgets/setup_sheet.dart';
 import '../common/widgets/step_prompt.dart';
+import '../common/widgets/step_session_controls.dart';
 import '../settings/settings_scope.dart';
 import 'exercise_sequence.dart';
 import 'sequence_editor_screen.dart';
@@ -14,7 +15,6 @@ import 'sequence_library.dart';
 import 'sequence_scope.dart';
 import 'sequence_session.dart';
 import 'sequence_timeline.dart';
-import 'widgets/sequence_controls.dart';
 import 'widgets/sequence_visual.dart';
 
 /// The sequences page. The user picks one of their sequences and plays
@@ -141,7 +141,7 @@ class _SequenceScreenState extends State<SequenceScreen>
                 ],
               ],
             ),
-      controls: SequenceControls(session: session),
+      controls: StepSessionControls(session: session),
     );
   }
 

@@ -6,13 +6,13 @@ import '../common/widgets/page_frame.dart';
 import '../common/widgets/session_layout.dart';
 import '../common/widgets/setup_sheet.dart';
 import '../common/widgets/step_prompt.dart';
+import '../common/widgets/step_session_controls.dart';
 import '../settings/settings_scope.dart';
 import 'breathing_method.dart';
 import 'breathing_phase.dart';
 import 'breathing_session.dart';
 import 'widgets/breathing_pacer.dart';
 import 'widgets/session_clock.dart';
-import 'widgets/session_controls.dart';
 
 /// The guided breathing page. It owns a [BreathingSession] and lays out
 /// the widgets that show and control it.
@@ -74,7 +74,11 @@ class _BreathingScreenState extends State<BreathingScreen>
             ? 'Well done. Take a moment before you continue.'
             : session.phase.cue,
       ),
-      details: SessionClock(secondsRemaining: session.secondsRemaining),
+      details: ListenableBuilder(
+        listenable: session.stepProgress,
+        builder: (context, _) =>
+            SessionClock(secondsRemaining: session.secondsRemaining),
+      ),
       showSetup: session.canChangeSettings,
       setup: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -96,7 +100,7 @@ class _BreathingScreenState extends State<BreathingScreen>
           ),
         ],
       ),
-      controls: SessionControls(session: session),
+      controls: StepSessionControls(session: session),
     );
   }
 

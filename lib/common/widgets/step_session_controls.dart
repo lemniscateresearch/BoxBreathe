@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 
-import '../../common/session_status.dart';
-import '../../common/widgets/session_buttons.dart';
-import '../sequence_session.dart';
+import '../session_status.dart';
+import '../step_session.dart';
+import 'session_buttons.dart';
 
 /// The primary button, with a reset button next to it. At a step that
 /// waits for the user, such as a huff, the primary button becomes Done.
-/// The start button is disabled while the sequence has no parts.
-class SequenceControls extends StatelessWidget {
-  const SequenceControls({super.key, required this.session});
+/// The start button is disabled while the session has no steps.
+class StepSessionControls extends StatelessWidget {
+  const StepSessionControls({super.key, required this.session});
 
-  final SequenceSession session;
+  final StepSession session;
 
   @override
   Widget build(BuildContext context) {

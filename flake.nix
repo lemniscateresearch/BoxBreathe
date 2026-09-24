@@ -27,7 +27,11 @@
           '';
         in
         {
-          default = pkgs.mkShell {
+          # mkShellNoCC: the default mkShell adds a C toolchain, which on
+          # macOS sets DEVELOPER_DIR and SDKROOT to a Nix Apple SDK. That
+          # hides Xcode from `flutter doctor` and iOS builds. Flutter needs
+          # no C compiler from Nix: iOS and macOS builds use Xcode.
+          default = pkgs.mkShellNoCC {
             packages = [
               pkgs.flutter
               pkgs.jdk17

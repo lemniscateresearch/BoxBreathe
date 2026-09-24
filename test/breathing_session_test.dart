@@ -46,6 +46,55 @@ void main() {
     expect(session.canChangeSettings, isFalse);
   });
 
+  test('turns the length into whole breaths', () {
+    final fourSecondPhases = BreathingSession(
+      vsync: const TestVSync(),
+      cues: FakeCuePlayer(),
+    );
+    addTearDown(fourSecondPhases.dispose);
+
+    // A box breath takes 16 s, so 3 min holds 11 whole breaths (2:56).
+    expect(fourSecondPhases.breaths, 11);
+    expect(fourSecondPhases.secondsRemaining, 176);
+    expect(fourSecondPhases.steps, hasLength(11 * 4));
+    expect(fourSecondPhases.steps.last.phase, BreathingPhase.holdAfterExhale);
+
+    // A triangle breath takes 12 s, so 1 min holds 5 breaths exactly.
+    fourSecondPhases
+      ..selectMethod(BreathingMethod.triangle)
+      ..selectLength(1);
+    expect(fourSecondPhases.breaths, 5);
+    expect(fourSecondPhases.secondsRemaining, 60);
+  });
+
+  testWidgets('finishes after the last phase of the last breath', (
+    tester,
+  ) async {
+    // Figure eight has 2 one-second phases, so 1 min is 30 breaths.
+    session
+      ..selectMethod(BreathingMethod.figureEight)
+      ..selectLength(1)
+      ..startOrResume();
+    expect(session.steps, hasLength(60));
+
+    // Short frames, so each phase that runs out moves on at once.
+    await tester.pump();
+    while (session.stepIndex < session.steps.length - 1) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(session.isRunning, isTrue);
+    expect(session.step.breath, 30);
+    expect(session.phase, BreathingPhase.exhale);
+    expect(session.secondsRemaining, 1);
+
+    for (var i = 0; i < 12; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(session.isFinished, isTrue);
+    expect(session.secondsRemaining, 0);
+    expect(cues.cues.last, SessionCue.finished);
+  });
+
   test('reset returns to idle and restores the full length', () {
     session
       ..selectLength(5)
@@ -80,8 +129,9 @@ void main() {
     session.startOrResume();
     await tester.pump();
 
+    final stopsBefore = cues.stops;
     session.pause();
-    expect(cues.stops, 1);
+    expect(cues.stops, stopsBefore + 1);
 
     session.startOrResume();
     expect(cues.cues, [SessionCue.breatheIn, SessionCue.breatheIn]);
