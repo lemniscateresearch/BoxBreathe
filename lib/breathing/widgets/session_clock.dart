@@ -14,13 +14,16 @@ class SessionClock extends StatelessWidget {
 
   String get _formatted {
     final minutesRemaining = (secondsRemaining / 60).ceil();
-    return '$breathsRemaining breaths, about $minutesRemaining min.';
+    return switch ((breathsRemaining, minutesRemaining)) {
+      (_, 0) => "All breaths finished.",
+      (1, _) => "1 breath remaining.",
+      _ => '$breathsRemaining breaths, about $minutesRemaining min.',
+    };
   }
 
   @override
   Widget build(BuildContext context) => Semantics(
     liveRegion: true,
-    label: 'Session time remaining: $_formatted',
     child: Text(
       _formatted,
       textAlign: TextAlign.center,
