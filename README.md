@@ -70,6 +70,16 @@ nix develop --command flutter build web --release --no-web-resources-cdn
 python3 -m http.server --directory build/web 8000
 ```
 
+To examine the site that CI builds, download the `github-pages` artifact from the CI run. It contains `artifact.tar`. CI builds the site for the address `/BoxBreathe/`, so put the files in a `BoxBreathe` folder:
+
+```sh
+mkdir -p ~/pages-preview/BoxBreathe
+tar -xf artifact.tar -C ~/pages-preview/BoxBreathe
+python3 -m http.server 8000 --directory ~/pages-preview
+```
+
+Then open <http://localhost:8000/BoxBreathe/>. If you serve the files from the root, the browser cannot find them and shows a blank page.
+
 Browsers play sound only after the user touches the page, so the music and the cues start when the user taps **Start session**.
 
 CI builds the site on each push and pull request. A push to `main` publishes the site to GitHub Pages when the repository variable `DEPLOY_WEB` is `true`.
