@@ -87,6 +87,22 @@ void main() {
     expect(find.text('Breathe in'), findsOneWidget);
   });
 
+  testWidgets('a new sequence without parts is removed on the way back', (
+    tester,
+  ) async {
+    library = SequenceLibrary(MemorySequenceStore());
+    await openSequencesPage(tester);
+
+    await tester.tap(find.text('Create a sequence'));
+    await tester.pumpAndSettle();
+    expect(library.sequences, hasLength(1));
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    expect(library.sequences, isEmpty);
+    expect(find.text('Create a sequence'), findsOneWidget);
+  });
+
   testWidgets('the editor fits at 2× text', (tester) async {
     library = SequenceLibrary(MemorySequenceStore(), const [
       ExerciseSequence(

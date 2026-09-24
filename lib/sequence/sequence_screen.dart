@@ -190,13 +190,18 @@ class _SequenceScreenState extends State<SequenceScreen>
     },
   );
 
-  void _createAndEdit(BuildContext context) {
+  /// Makes a new sequence and opens it in the editor. If the user leaves
+  /// the editor without adding a part, the empty sequence is removed.
+  Future<void> _createAndEdit(BuildContext context) async {
     final sequence = _library.create();
     _session.selectSequence(sequence);
-    _edit(context, sequence);
+    await _edit(context, sequence);
+    if (_library.byId(sequence.id)?.segments.isEmpty ?? false) {
+      _library.remove(sequence.id);
+    }
   }
 
-  void _edit(BuildContext context, ExerciseSequence sequence) =>
+  Future<void> _edit(BuildContext context, ExerciseSequence sequence) =>
       Navigator.of(context).push(
         MaterialPageRoute<void>(
           builder: (context) => SequenceEditorScreen(sequenceId: sequence.id),

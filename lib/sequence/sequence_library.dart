@@ -20,12 +20,20 @@ class SequenceLibrary extends ChangeNotifier {
   ExerciseSequence? byId(String? id) =>
       _sequences.where((sequence) => sequence.id == id).firstOrNull;
 
-  /// Adds an empty sequence at the end of the list and returns it.
+  /// Adds an empty sequence at the end of the list and returns it. Its
+  /// name is "Sequence N", with the lowest N that no sequence uses.
   ExerciseSequence create() {
-    final sequence = ExerciseSequence(
-      id: DateTime.now().microsecondsSinceEpoch.toString(),
-      name: 'Sequence ${_sequences.length + 1}',
-    );
+    final names = {for (final sequence in _sequences) sequence.name};
+    var number = 1;
+    while (names.contains('Sequence $number')) {
+      number++;
+    }
+    // The clock can give the same time twice, so step past used ids.
+    var id = DateTime.now().microsecondsSinceEpoch;
+    while (byId('$id') != null) {
+      id++;
+    }
+    final sequence = ExerciseSequence(id: '$id', name: 'Sequence $number');
     _change([..._sequences, sequence]);
     return sequence;
   }

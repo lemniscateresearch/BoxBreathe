@@ -39,9 +39,31 @@ void main() {
       expect(await store.load(), [_morning]);
     });
 
-    test('loads an empty list from data that is not JSON', () async {
+    test('keeps a copy of data that it cannot read', () async {
       final store = await _store({'sequences': 'not json {'});
       expect(await store.load(), isEmpty);
+
+      // A save after that does not destroy the unreadable data.
+      await store.save([_morning]);
+      final preferences = await SharedPreferences.getInstance();
+      expect(
+        preferences.getString(PreferencesSequenceStore.backupKey),
+        'not json {',
+      );
+      expect(await store.load(), [_morning]);
+    });
+
+    test('keeps the first unreadable copy', () async {
+      final store = await _store({
+        'sequences': 'second',
+        PreferencesSequenceStore.backupKey: 'first',
+      });
+      await store.load();
+      final preferences = await SharedPreferences.getInstance();
+      expect(
+        preferences.getString(PreferencesSequenceStore.backupKey),
+        'first',
+      );
     });
 
     test('leaves out unknown segments and fixes bad counts', () async {
@@ -101,5 +123,16 @@ void main() {
         expect(await store.load(), isEmpty);
       },
     );
+
+    test('gives a new sequence a name that no sequence uses', () {
+      final library = SequenceLibrary(MemorySequenceStore());
+      final first = library.create();
+      library.create();
+      library.remove(first.id);
+
+      // "Sequence 2" is still in use, so the new name must not be it.
+      expect(library.create().name, 'Sequence 1');
+      expect(library.create().name, 'Sequence 3');
+    });
   });
 }

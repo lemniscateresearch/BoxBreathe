@@ -28,8 +28,11 @@ class MemorySequenceStore implements SequenceStore {
 }
 
 /// Keeps the sequences in the platform preferences, as one JSON value.
-/// Data that it cannot read gives an empty list, and a segment that it
-/// does not know is left out.
+/// A segment that it does not know is left out.
+///
+/// Data that it cannot read gives an empty list. Before that, the store
+/// copies the data to [backupKey], so that the next save does not
+/// destroy the user's sequences.
 class PreferencesSequenceStore implements SequenceStore {
   PreferencesSequenceStore(this._preferences);
 
@@ -39,10 +42,23 @@ class PreferencesSequenceStore implements SequenceStore {
   final SharedPreferences _preferences;
 
   static const _key = 'sequences';
+  static const backupKey = 'sequences.unreadable';
   static const _version = 1;
 
   @override
-  Future<List<ExerciseSequence>> load() async => decode(_preferences.get(_key));
+  Future<List<ExerciseSequence>> load() async {
+    final value = _preferences.get(_key);
+    if (value == null) return const [];
+    final sequences = decode(value);
+    if (sequences != null) return sequences;
+
+    // Keep the first copy, which is the one most likely to hold the
+    // user's data.
+    if (!_preferences.containsKey(backupKey)) {
+      await _preferences.setString(backupKey, value.toString());
+    }
+    return const [];
+  }
 
   @override
   Future<void> save(List<ExerciseSequence> sequences) =>
@@ -53,15 +69,17 @@ class PreferencesSequenceStore implements SequenceStore {
     'sequences': [for (final sequence in sequences) sequence.toJson()],
   });
 
-  static List<ExerciseSequence> decode(Object? value) {
-    if (value is! String) return const [];
+  /// Reads the value that [encode] wrote. Returns null when the value
+  /// is not in that format.
+  static List<ExerciseSequence>? decode(Object value) {
+    if (value is! String) return null;
     final Object? json;
     try {
       json = jsonDecode(value);
     } on FormatException {
-      return const [];
+      return null;
     }
-    if (json is! Map || json['sequences'] is! List) return const [];
+    if (json is! Map || json['sequences'] is! List) return null;
     return [
       for (final sequence in (json['sequences'] as List).map(
         ExerciseSequence.fromJson,
