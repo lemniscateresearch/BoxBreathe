@@ -1,15 +1,20 @@
 import 'package:flutter/material.dart';
 
-/// Shows the time that remains in the session as `m:ss`.
+/// Shows the time that remains in the session as an exact breath count and an
+/// approximate time in minutes.
 class SessionClock extends StatelessWidget {
-  const SessionClock({super.key, required this.secondsRemaining});
+  const SessionClock({
+    super.key,
+    required this.secondsRemaining,
+    required this.breathsRemaining,
+  });
 
   final int secondsRemaining;
+  final int breathsRemaining;
 
   String get _formatted {
-    final minutes = secondsRemaining ~/ 60;
-    final seconds = secondsRemaining % 60;
-    return '$minutes:${seconds.toString().padLeft(2, '0')}';
+    final minutesRemaining = (secondsRemaining / 60).ceil();
+    return '$breathsRemaining breaths, about $minutesRemaining min.';
   }
 
   @override
@@ -20,7 +25,7 @@ class SessionClock extends StatelessWidget {
       _formatted,
       textAlign: TextAlign.center,
       style: const TextStyle(
-        fontSize: 44,
+        fontSize: 24,
         fontWeight: FontWeight.w500,
         letterSpacing: 2,
       ),

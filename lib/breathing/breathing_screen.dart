@@ -76,8 +76,10 @@ class _BreathingScreenState extends State<BreathingScreen>
       ),
       details: ListenableBuilder(
         listenable: session.stepProgress,
-        builder: (context, _) =>
-            SessionClock(secondsRemaining: session.secondsRemaining),
+        builder: (context, _) => SessionClock(
+          secondsRemaining: session.secondsRemaining,
+          breathsRemaining: session.breaths - session.step.breath + 1,
+        ),
       ),
       showSetup: session.canChangeSettings,
       setup: Column(
