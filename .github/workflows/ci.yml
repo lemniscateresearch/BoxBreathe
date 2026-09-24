@@ -88,3 +88,42 @@ jobs:
           path: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
           retention-days: 3
           if-no-files-found: error
+
+  # The site gets CanvasKit from its own address, not from Google's CDN,
+  # so the browser makes no requests to other sites. The base href is the
+  # repository name, because GitHub Pages serves the site from
+  # <owner>.github.io/<repository>/.
+  build-web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cachix/install-nix-action@v31
+      - uses: actions/cache@v4
+        with:
+          path: ~/.pub-cache
+          key: pub-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
+      - name: Build web
+        run: >-
+          nix develop --command flutter build web --release
+          --no-web-resources-cdn
+          --base-href "/${{ github.event.repository.name }}/"
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/web
+          retention-days: 3
+
+  # Publishes the site from main only, and only when the repository
+  # variable DEPLOY_WEB is 'true'. Pull requests do not deploy.
+  deploy-web:
+    needs: [build-web, analyze, test]
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && vars.DEPLOY_WEB == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4
