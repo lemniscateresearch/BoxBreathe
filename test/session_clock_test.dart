@@ -36,6 +36,23 @@ void main() {
     expect(find.text('7 breaths, about 2 min.'), findsOneWidget);
   });
 
+  // In the last minute, the count still shows every breath that remains.
+  testWidgets('shows many breaths in the last minute', (tester) async {
+    await _pumpClock(tester, seconds: 48, breaths: 3);
+    expect(find.text('3 breaths, about 1 min.'), findsOneWidget);
+  });
+
+  testWidgets('shows the last breath as one breath', (tester) async {
+    await _pumpClock(tester, seconds: 16, breaths: 1);
+    expect(find.text('1 breath remaining.'), findsOneWidget);
+  });
+
+  // At the finish, the session stays on the last breath with no time left.
+  testWidgets('shows the finish when no time remains', (tester) async {
+    await _pumpClock(tester, seconds: 0, breaths: 1);
+    expect(find.text('All breaths finished.'), findsOneWidget);
+  });
+
   testWidgets('is a live region with a label for screen readers', (
     tester,
   ) async {
@@ -43,7 +60,7 @@ void main() {
     await _pumpClock(tester, seconds: 176);
 
     final node = tester.getSemantics(find.byType(SessionClock));
-    expect(node.label, contains('11 breaths, about 3 min.'));
+    expect(node.label, '11 breaths, about 3 min.');
     expect(node.flagsCollection.isLiveRegion, isTrue);
     semantics.dispose();
   });

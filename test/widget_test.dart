@@ -35,6 +35,35 @@ void main() {
     await tester.pump();
   });
 
+  testWidgets('shows the finish at the end of a session', (tester) async {
+    await tester.pumpWidget(const BoxBreatheApp());
+
+    await tester.tap(find.text('Box · 3 min'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('1 min'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Done'));
+    await tester.pumpAndSettle();
+
+    // 1 min of box breathing is 3 whole breaths, which take 48 s.
+    expect(find.text('3 breaths, about 1 min.'), findsOneWidget);
+    await tester.tap(find.text('Start session'));
+    await tester.pump();
+
+    // Short frames drift a little per phase, so wait for the last breath
+    // first and then for the finish.
+    for (var i = 0; i < 600; i++) {
+      if (find.text('1 breath remaining.').evaluate().isNotEmpty) break;
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(find.text('1 breath remaining.'), findsOneWidget);
+    for (var i = 0; i < 200; i++) {
+      if (find.text('All breaths finished.').evaluate().isNotEmpty) break;
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(find.text('All breaths finished.'), findsOneWidget);
+  });
+
   testWidgets('selects a breathing method in the setup sheet', (tester) async {
     await tester.pumpWidget(const BoxBreatheApp());
 
