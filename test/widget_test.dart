@@ -8,7 +8,8 @@ void main() {
   ) async {
     await tester.pumpWidget(const BoxBreatheApp());
 
-    expect(find.text('3:00'), findsOneWidget);
+    // 3 min of box breathing is 11 whole breaths.
+    expect(find.text('2:56'), findsOneWidget);
 
     await tester.tap(find.text('Start session'));
     await tester.pump();

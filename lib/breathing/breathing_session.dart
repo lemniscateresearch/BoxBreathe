@@ -1,150 +1,87 @@
-import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/animation.dart';
-import 'package:flutter/foundation.dart';
 
-import '../common/audio/cue_player.dart';
-import '../common/audio/session_cue.dart';
-import '../common/guided_session.dart';
-import '../common/session_status.dart';
+import '../common/step_session.dart';
+import 'breath_step.dart';
 import 'breathing_method.dart';
 import 'breathing_phase.dart';
 
 /// Holds the state of one breathing session: the selected method and
-/// length, the countdown, and the progress through the current phase.
+/// length, the current phase, and the progress through that phase.
+///
+/// The chosen length becomes a whole number of breaths, so a session
+/// always ends after a full breath. It can end a few seconds before the
+/// chosen length.
 ///
 /// The widgets read this state and call its methods. They keep no
 /// session state of their own.
-class BreathingSession extends ChangeNotifier implements GuidedSession {
+class BreathingSession extends StepSession<BreathStep> {
   BreathingSession({
-    required TickerProvider vsync,
-    required this._cues,
-    Duration phaseLength = const Duration(seconds: 4),
-  }) {
-    _phaseAnimation = AnimationController(vsync: vsync, duration: phaseLength)
-      ..addStatusListener((status) {
-        if (status == AnimationStatus.completed && isRunning) _advancePhase();
-      });
+    required super.vsync,
+    required super.cues,
+    this.phaseLength = const Duration(seconds: 4),
+  }) : super(finishedCue: 'Session complete. Well done.') {
+    _rebuildSteps();
   }
 
   static const lengthOptions = [1, 3, 5, 10];
 
-  final CuePlayer _cues;
-
-  late final AnimationController _phaseAnimation;
-  Timer? _countdown;
+  final Duration phaseLength;
 
   BreathingMethod _method = BreathingMethod.box;
   int _minutes = 3;
-  int _secondsRemaining = 3 * 60;
-  int _phaseIndex = 0;
-  SessionStatus _status = SessionStatus.idle;
 
   BreathingMethod get method => _method;
   int get minutes => _minutes;
-  int get secondsRemaining => _secondsRemaining;
-  int get phaseIndex => _phaseIndex;
-  BreathingPhase get phase => _method.phases[_phaseIndex];
+
+  /// There is always at least one breath, so the step is never null.
   @override
-  SessionStatus get status => _status;
+  BreathStep get step => super.step!;
+
+  int get phaseIndex => step.phaseIndex;
+  BreathingPhase get phase => step.phase;
 
   /// Goes from 0 to 1 during each phase.
-  Animation<double> get phaseProgress => _phaseAnimation;
+  Animation<double> get phaseProgress => stepProgress;
 
-  bool get isRunning => _status == SessionStatus.running;
-  bool get isFinished => _status == SessionStatus.finished;
-
-  /// The user can change the method and length only when no session is
-  /// in progress.
-  bool get canChangeSettings =>
-      _status == SessionStatus.idle || _status == SessionStatus.finished;
-
-  void startOrResume() {
-    if (isFinished) {
-      _secondsRemaining = _minutes * 60;
-      _phaseIndex = 0;
-      _phaseAnimation.reset();
-    }
-    _status = SessionStatus.running;
-    notifyListeners();
-    _phaseAnimation.forward();
-    _playPhaseCue();
-    _countdown ??= Timer.periodic(const Duration(seconds: 1), (_) => _tick());
+  /// The number of whole breaths that fit in the chosen length.
+  int get breaths {
+    final breathLength = phaseLength * _method.phases.length;
+    return max(1, (_minutes * 60 * 1000) ~/ breathLength.inMilliseconds);
   }
 
-  void pause() {
-    _status = SessionStatus.paused;
-    notifyListeners();
-    _phaseAnimation.stop();
-    unawaited(_cues.stop());
-  }
-
-  void reset() {
-    _stopCountdown();
-    _phaseAnimation.reset();
-    unawaited(_cues.stop());
-    _status = SessionStatus.idle;
-    _phaseIndex = 0;
-    _secondsRemaining = _minutes * 60;
-    notifyListeners();
+  /// The time left in the session, rounded up to a whole second. It
+  /// changes with [stepProgress], not only when the session notifies.
+  int get secondsRemaining {
+    final stepsLeft = steps.length - stepIndex - stepProgress.value;
+    return (stepsLeft * phaseLength.inMilliseconds / 1000).ceil();
   }
 
   void selectMethod(BreathingMethod method) {
     if (!canChangeSettings) return;
-    _phaseAnimation.reset();
     _method = method;
-    _phaseIndex = 0;
-    notifyListeners();
+    _rebuildSteps();
   }
 
   void selectLength(int minutes) {
     if (!canChangeSettings) return;
     _minutes = minutes;
-    _secondsRemaining = minutes * 60;
-    _status = SessionStatus.idle;
-    notifyListeners();
+    _rebuildSteps();
   }
 
-  void _tick() {
-    if (!isRunning) return;
-    if (_secondsRemaining <= 1) {
-      _finish();
-    } else {
-      _secondsRemaining--;
-      notifyListeners();
-    }
-  }
-
-  void _finish() {
-    _stopCountdown();
-    _phaseAnimation.stop();
-    _secondsRemaining = 0;
-    _status = SessionStatus.finished;
-    notifyListeners();
-    unawaited(_cues.play(SessionCue.finished, 'Session complete. Well done.'));
-  }
-
-  void _advancePhase() {
-    _phaseIndex = (_phaseIndex + 1) % _method.phases.length;
-    notifyListeners();
-    _playPhaseCue();
-    _phaseAnimation
-      ..reset()
-      ..forward();
-  }
-
-  void _playPhaseCue() => unawaited(_cues.play(phase.sessionCue, phase.title));
-
-  void _stopCountdown() {
-    _countdown?.cancel();
-    _countdown = null;
-  }
-
-  @override
-  void dispose() {
-    _stopCountdown();
-    unawaited(_cues.stop());
-    _phaseAnimation.dispose();
-    super.dispose();
+  void _rebuildSteps() {
+    final breaths = this.breaths;
+    replaceSteps([
+      for (var breath = 1; breath <= breaths; breath++)
+        for (var i = 0; i < _method.phases.length; i++)
+          BreathStep(
+            method: _method,
+            phaseIndex: i,
+            breath: breath,
+            breaths: breaths,
+            duration: phaseLength,
+          ),
+    ]);
   }
 }

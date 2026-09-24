@@ -44,13 +44,13 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 1100));
     expect(session.step.kind, ClearanceStepKind.huff);
-    expect(session.isWaitingForHuff, isTrue);
+    expect(session.isWaitingForUser, isTrue);
 
     await tester.pump(const Duration(seconds: 5));
     expect(session.step.kind, ClearanceStepKind.huff);
 
     // Done moves on to the closing rest, and then the session finishes.
-    session.completeHuff();
+    session.completeStep();
     expect(session.step.kind, ClearanceStepKind.breathingControl);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 1100));
@@ -85,7 +85,7 @@ void main() {
       'Relax, and breathe gently',
       'Huff',
     ]);
-    expect(session.isWaitingForHuff, isTrue);
+    expect(session.isWaitingForUser, isTrue);
   });
 
   testWidgets('pause stops the step and the cue, resume repeats the cue', (
@@ -95,9 +95,10 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
 
+    final stopsBefore = cues.stops;
     session.pause();
     expect(session.status, SessionStatus.paused);
-    expect(cues.stops, 1);
+    expect(cues.stops, stopsBefore + 1);
 
     // While paused, the step does not advance.
     await tester.pump(const Duration(seconds: 5));

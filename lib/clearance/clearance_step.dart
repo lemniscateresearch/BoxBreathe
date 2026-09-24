@@ -1,6 +1,7 @@
 import 'package:flutter/painting.dart';
 
 import '../common/audio/session_cue.dart';
+import '../common/timed_step.dart';
 
 enum ClearanceStepKind {
   breathingControl,
@@ -58,7 +59,7 @@ extension ClearanceStepKindDetails on ClearanceStepKind {
 }
 
 /// One step of an airway clearance routine.
-class ClearanceStep {
+class ClearanceStep implements TimedStep {
   const ClearanceStep({
     required this.kind,
     required this.duration,
@@ -69,8 +70,7 @@ class ClearanceStep {
 
   final ClearanceStepKind kind;
 
-  /// How long the step lasts. A step without a duration waits until the
-  /// user says that they are done.
+  @override
   final Duration? duration;
 
   /// The cycle that contains this step, starting at 1.
@@ -82,6 +82,12 @@ class ClearanceStep {
   final int repetitions;
 
   bool get waitsForUser => duration == null;
+
+  @override
+  SessionCue get sessionCue => kind.sessionCue;
+
+  @override
+  String get spokenCue => kind.spokenCue;
 
   /// Where this step is in a session of [cycles] cycles, for example
   /// "Cycle 1 of 3 · Huff 2 of 2".

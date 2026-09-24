@@ -7,11 +7,11 @@ import '../common/widgets/safety_note.dart';
 import '../common/widgets/session_layout.dart';
 import '../common/widgets/setup_sheet.dart';
 import '../common/widgets/step_prompt.dart';
+import '../common/widgets/step_session_controls.dart';
 import '../settings/settings_scope.dart';
 import 'clearance_routine.dart';
 import 'clearance_session.dart';
 import 'clearance_step.dart';
-import 'widgets/clearance_controls.dart';
 import 'widgets/clearance_visual.dart';
 
 /// The airway clearance page. It owns a [ClearanceSession] and lays out
@@ -100,7 +100,7 @@ class _ClearanceScreenState extends State<ClearanceScreen>
           const SafetyNote(),
         ],
       ),
-      controls: ClearanceControls(session: session),
+      controls: StepSessionControls(session: session),
     );
   }
 

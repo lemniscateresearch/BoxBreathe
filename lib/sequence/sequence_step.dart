@@ -2,19 +2,19 @@ import '../breathing/breathing_method.dart';
 import '../breathing/breathing_phase.dart';
 import '../clearance/clearance_step.dart';
 import '../common/audio/session_cue.dart';
+import '../common/timed_step.dart';
 import 'sequence_segment.dart';
 
 /// One step of a sequence session. `buildTimeline` expands a sequence
 /// into a list of steps, and the session plays them in order.
-sealed class SequenceStep {
+sealed class SequenceStep implements TimedStep {
   const SequenceStep({required this.segmentIndex});
 
   /// The segment that this step belongs to, starting at 0. A transition
   /// belongs to the segment that comes after it.
   final int segmentIndex;
 
-  /// How long the step lasts. A step without a duration waits until the
-  /// user says that they are done.
+  @override
   Duration? get duration;
 
   bool get waitsForUser => duration == null;
@@ -22,8 +22,9 @@ sealed class SequenceStep {
   String get title;
   String get cue;
 
-  /// A short phrase for the text-to-speech engine.
+  @override
   String get spokenCue;
+  @override
   SessionCue get sessionCue;
 
   /// Where the step is inside its segment, for example "Breath 2 of 6".
